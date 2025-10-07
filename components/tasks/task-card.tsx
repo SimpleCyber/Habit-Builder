@@ -15,7 +15,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
 
   return (
     <div
-      className="task-card glass-effect rounded-2xl p-4 cursor-pointer shadow-md hover:shadow-lg transition-all"
+      className="task-card glass-effect rounded-2xl p-4 cursor-pointer hover:shadow-md shadow-lg transition-all"
       onClick={onClick}
     >
       <div className="flex items-center justify-between">

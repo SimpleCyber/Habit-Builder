@@ -24,6 +24,7 @@ interface TaskDetailViewProps {
   onClose: () => void
   onDelete: () => void
   onUpdate: (taskId: string, updates: Partial<Task>) => Promise<void>
+  onHome?: () => void
 }
 
 export function TaskDetailView({ task, onClose, onDelete, onUpdate }: TaskDetailViewProps) {

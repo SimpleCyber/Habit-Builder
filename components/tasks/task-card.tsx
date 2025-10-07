@@ -15,17 +15,20 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
 
   return (
     <div
-      className="task-card glass-effect rounded-2xl p-4 cursor-pointer hover:shadow-lg transition-all"
+      className="task-card glass-effect rounded-2xl p-4 cursor-pointer shadow-md hover:shadow-lg transition-all"
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
-            <Icon name={task.icon} className="w-6 h-6" />
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: task.iconBg || "hsl(220 75% 88%)" }}
+          >
+            <Icon name={task.icon} className="w-6 h-6 text-gray-800" />
           </div>
           <div>
-            <h3 className="font-bold text-gray-800 dark:text-white">{task.title}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{task.reason}</p>
+            <h3 className="font-bold text-foreground text-base sm:text-lg">{task.title}</h3>
+            <p className="text-sm text-muted-foreground">{task.reason}</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">

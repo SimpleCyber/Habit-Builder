@@ -3,6 +3,7 @@ export interface Task {
   title: string
   reason: string
   icon: string
+  iconBg?: string
   streak: number
   lastUpdate: string | null
   history: HistoryEntry[]

@@ -52,10 +52,8 @@ export default function HomePage() {
   }
 
   const handleDeleteTask = async (taskId: string) => {
-    if (confirm("Are you sure you want to delete this task?")) {
-      await deleteTask(taskId)
-      setCurrentTaskId(null)
-    }
+    await deleteTask(taskId)
+    setCurrentTaskId(null)
   }
 
   if (authLoading || tasksLoading) {
@@ -87,6 +85,7 @@ export default function HomePage() {
           onClose={handleCloseTask}
           onDelete={() => handleDeleteTask(currentTask.id)}
           onUpdate={updateTask}
+          onHome={() => router.push("/home")}
         />
       ) : null}
 

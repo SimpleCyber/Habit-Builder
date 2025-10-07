@@ -1,8 +1,11 @@
 "use client"
 
-import { Moon, Sun, Plus, Inbox } from "lucide-react"
+import { Plus, Inbox } from "lucide-react"
 import type { Task } from "@/lib/types"
 import { TaskCard } from "@/components/tasks/task-card"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useState } from "react"
+import { UserMenu } from "@/components/layout/user-menu"
 
 interface MainViewProps {
   tasks: Task[]
@@ -15,32 +18,23 @@ interface MainViewProps {
 export function MainView({ tasks, onOpenTask, onOpenAddModal, darkMode, onToggleDarkMode }: MainViewProps) {
   const handleAddClick = () => {
     if (tasks.length >= 5) {
-      alert("Maximum 5 tasks allowed!")
+      setShowMaxTasks(true)
       return
     }
     onOpenAddModal()
   }
 
+  const [showMaxTasks, setShowMaxTasks] = useState(false)
+
   return (
-    <div className="container mx-auto max-w-md p-4">
-      <div className="glass-effect rounded-2xl shadow-xl p-6 mb-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent dark:from-purple-400 dark:to-blue-400">
-            HabitX
-          </h1>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={onToggleDarkMode}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              {darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
-            </button>
-            <button
-              onClick={handleAddClick}
-              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow"
-            >
-              <Plus className="w-6 h-6" />
-            </button>
+    <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">
+      <div className="glass-effect rounded-2xl shadow-xl p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">HabitX</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <UserMenu />
           </div>
         </div>
       </div>
@@ -56,6 +50,23 @@ export function MainView({ tasks, onOpenTask, onOpenAddModal, darkMode, onToggle
           tasks.map((task) => <TaskCard key={task.id} task={task} onClick={() => onOpenTask(task.id)} />)
         )}
       </div>
+
+      <button
+        onClick={handleAddClick}
+        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-xl hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        aria-label="Add task"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
+      <Dialog open={showMaxTasks} onOpenChange={setShowMaxTasks}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Task limit reached</DialogTitle>
+            <DialogDescription>You can create up to 5 tasks. Delete a task to add a new one.</DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

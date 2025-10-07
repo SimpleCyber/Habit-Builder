@@ -82,8 +82,8 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="glass-effect rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-100 to-blue-50 dark:from-[#101418] dark:to-[#0b0f13]">
+      <div className="glass-effect rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="flex justify-end mb-4">
           <button
             onClick={toggleDarkMode}

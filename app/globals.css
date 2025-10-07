@@ -128,10 +128,21 @@
   .glass-effect {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
+    /* subtle border and shadow for light theme cards */
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
   }
 
   .dark .glass-effect {
-    background: rgba(31, 41, 55, 0.95);
+    /* stronger dark glass for better title contrast */
+    background: rgba(17, 24, 39, 0.9);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  /* ensure headings in dark mode are readable */
+  .dark h1,
+  .dark h2,
+  .dark h3 {
+    color: var(--foreground);
   }
 
   .streak-flame {

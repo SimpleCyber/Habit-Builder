@@ -1,14 +1,23 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { ArrowLeft, Trash2, Flame, History, X } from "lucide-react"
+import { ArrowLeft, History, X } from "lucide-react"
 import type { Task } from "@/lib/types"
-import { Icon } from "@/components/ui/icon"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { compressImage } from "@/lib/image-utils"
 import { CalendarView } from "@/components/calendar/calendar-view"
 import { HistoryList } from "@/components/history/history-list"
+import { useRouter } from "next/navigation"
+import { UserMenu } from "@/components/layout/user-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface TaskDetailViewProps {
   task: Task
@@ -21,16 +30,20 @@ export function TaskDetailView({ task, onClose, onDelete, onUpdate }: TaskDetail
   const [updateText, setUpdateText] = useState("")
   const [showHistory, setShowHistory] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [formError, setFormError] = useState("")
 
   const today = new Date().toDateString()
   const alreadyChecked = task.history.some((h) => new Date(h.date).toDateString() === today)
+  const todayEntry = task.history.find((h) => new Date(h.date).toDateString() === today)
 
   const handleSaveUpdate = async () => {
     if (!updateText.trim()) {
-      alert("Please add a description!")
+      setFormError("Please add a description.")
       return
     }
-
+    setFormError("")
     const file = fileInputRef.current?.files?.[0]
     let photoData: string | null = null
 
@@ -74,44 +87,25 @@ export function TaskDetailView({ task, onClose, onDelete, onUpdate }: TaskDetail
   }
 
   return (
-    <div className="container mx-auto max-w-md p-4">
-      {/* Header */}
-      <div className="glass-effect rounded-2xl shadow-xl p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
+    <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">
+      <div className="glass-effect rounded-2xl shadow-xl p-4 mb-4">
+        <div className="flex items-center justify-between">
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Back"
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
           <button
-            onClick={onDelete}
-            className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 text-red-500 transition-colors"
+            onClick={() => router.push("/home")}
+            className="text-xl font-bold hover:opacity-90"
+            aria-label="Go to home"
+            title="Home"
           >
-            <Trash2 className="w-5 h-5" />
+            HabitX
           </button>
-        </div>
-
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
-              <Icon name={task.icon} className="w-8 h-8" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{task.title}</h2>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="flex items-center space-x-1">
-              <span className="text-3xl font-bold text-orange-500 streak-flame">{task.streak}</span>
-              <Flame className="w-8 h-8 text-orange-500" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-purple-50 dark:bg-gray-700 rounded-lg p-3 mb-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300 font-medium mb-1">Reason:</p>
-          <p className="text-gray-800 dark:text-white">{task.reason}</p>
+          <UserMenu />
         </div>
       </div>
 
@@ -119,39 +113,56 @@ export function TaskDetailView({ task, onClose, onDelete, onUpdate }: TaskDetail
       <div className="glass-effect rounded-2xl shadow-xl p-6 mb-6">
         <h3 className="text-xl font-bold mb-4">{alreadyChecked ? "Today's Update" : "Update Today"}</h3>
 
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 dark:text-gray-300 mb-2">Description:</label>
-          <Textarea
-            value={updateText}
-            onChange={(e) => setUpdateText(e.target.value)}
-            placeholder="What did you accomplish today?"
-            maxLength={100}
-            disabled={alreadyChecked}
-            className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white h-24 resize-none"
-          />
-        </div>
+        {formError && <p className="text-sm text-destructive mb-2">{formError}</p>}
 
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600 dark:text-gray-300 mb-2">Upload Pic / Take Pic:</label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            disabled={alreadyChecked}
-            className="w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"
-          />
-        </div>
+        {todayEntry && (
+          <div className="mb-4 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+            {todayEntry.photo && (
+              <img
+                src={todayEntry.photo || "/placeholder.svg"}
+                alt="Today's update photo"
+                className="mb-2 rounded-md w-full object-cover"
+              />
+            )}
+            <p className="text-sm">{todayEntry.text}</p>
+          </div>
+        )}
 
-        {!alreadyChecked ? (
-          <Button
-            onClick={handleSaveUpdate}
-            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-lg font-semibold hover:shadow-lg transition-shadow"
-          >
-            Mark as Done
-          </Button>
-        ) : (
-          <div className="w-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 p-3 rounded-lg font-semibold text-center">
+        {!alreadyChecked && (
+          <>
+            <div className="mb-4">
+              <label className="block text-sm text-gray-600 dark:text-gray-300 mb-2">Description:</label>
+              <Textarea
+                value={updateText}
+                onChange={(e) => setUpdateText(e.target.value)}
+                placeholder="What did you accomplish today?"
+                maxLength={100}
+                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white h-24 resize-none"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm text-gray-600 dark:text-gray-300 mb-2">Upload Pic / Take Pic:</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"
+              />
+            </div>
+
+            <Button
+              onClick={handleSaveUpdate}
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white p-3 rounded-lg font-semibold hover:shadow-lg transition-shadow"
+            >
+              Mark as Done
+            </Button>
+          </>
+        )}
+
+        {alreadyChecked && (
+          <div className="w-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 p-3 rounded-lg font-semibold text-center">
             ✓ Already Checked In Today
           </div>
         )}
@@ -186,6 +197,35 @@ export function TaskDetailView({ task, onClose, onDelete, onUpdate }: TaskDetail
           <HistoryList history={task.history} />
         </div>
       )}
+
+      <div className="glass-effect rounded-2xl shadow-xl p-6 mb-6">
+        <Button variant="destructive" className="w-full" onClick={() => setConfirmDelete(true)}>
+          Delete Task
+        </Button>
+      </div>
+
+      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete this task?</DialogTitle>
+            <DialogDescription>This action cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setConfirmDelete(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                onDelete()
+                setConfirmDelete(false)
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

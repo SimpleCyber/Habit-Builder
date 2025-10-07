@@ -9,7 +9,7 @@ import { Icon } from "@/components/ui/icon"
 
 interface AddTaskModalProps {
   onClose: () => void
-  onAdd: (task: Omit<Task, "id" | "createdAt">) => Promise<void>
+  onAdd: (task: Omit<Task, "id" | "createdAt" | "iconBg">) => Promise<void>
   maxTasks: boolean
 }
 
@@ -19,18 +19,18 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
   const [title, setTitle] = useState("")
   const [reason, setReason] = useState("")
   const [selectedIcon, setSelectedIcon] = useState("target")
+  const [error, setError] = useState("")
 
   const handleSubmit = async () => {
     if (!title.trim() || !reason.trim()) {
-      alert("Please fill in all fields!")
+      setError("Please fill in all fields.")
       return
     }
-
     if (maxTasks) {
-      alert("Maximum 5 tasks allowed!")
+      setError("Maximum 5 tasks allowed.")
       return
     }
-
+    setError("")
     await onAdd({
       title,
       reason,
@@ -39,7 +39,6 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
       lastUpdate: null,
       history: [],
     })
-
     onClose()
   }
 
@@ -81,6 +80,8 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
             ))}
           </div>
         </div>
+
+        <div className="mb-3">{error && <p className="text-sm text-destructive">{error}</p>}</div>
 
         <div className="flex space-x-3">
           <Button

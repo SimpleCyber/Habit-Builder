@@ -52,7 +52,7 @@ export const useTasks = () => {
       iconBg: randomPastel(),
       id: Date.now().toString(),
       createdAt: new Date().toISOString(),
-      visibility: "private", // default to private; owner can toggle to public
+      visibility: "public", // default to public; owner can toggle to private
     };
 
     const updatedTasks = [...tasks, newTask];

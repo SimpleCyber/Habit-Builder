@@ -21,6 +21,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+import { Header } from "@/components/layout/header";
+
 interface TaskDetailViewProps {
   task: Task;
   onClose: () => void;
@@ -110,29 +112,7 @@ export function TaskDetailView({
 
   return (
     <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-6xl p-4 sm:p-6">
-      {/* header card */}
-      <div className="glass-effect rounded-2xl shadow-xl p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Back"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <button
-            onClick={() => router.push("/home")}
-            className="text-xl font-bold hover:opacity-90"
-            aria-label="Go to home"
-            title="Home"
-          >
-            HabitX
-          </button>
-          <div className="flex items-center gap-2">
-            <UserMenu />
-          </div>
-        </div>
-      </div>
+      <Header />
 
       <div className="mb-5">
         <TaskCard key={task.id} task={task} readOnly />

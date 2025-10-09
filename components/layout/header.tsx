@@ -4,11 +4,11 @@ import { useRouter, usePathname } from "next/navigation";
 import { UserMenu } from "@/components/layout/user-menu";
 import Link from "next/link";
 import {
-  ContactRound,
   UserPlus,
   UserRoundCheck,
   UserRoundSearch,
   ArrowLeft,
+  UserSquare,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -55,50 +55,46 @@ export function Header({ onPhotoClick }: HeaderProps) {
           </button>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-3">
-              {pathname?.startsWith("/friends") ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      aria-label="Add friend"
-                      title="Add friend"
-                      className="p-2 rounded-md hover:bg-muted transition"
-                    >
-                      <UserPlus className="w-5 h-5" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/friends/requestrecive"
-                        className="flex items-center gap-2"
-                      >
-                        <UserRoundCheck className="w-4 h-4" />
-                        Requests Received
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/friends/requestsend"
-                        className="flex items-center gap-2"
-                      >
-                        <UserRoundSearch className="w-4 h-4" />
-                        Search Friends
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Link
-                  href="/friends"
-                  aria-label="Friends"
-                  title="Friends"
-                  className="p-2 rounded-md hover:bg-muted transition"
-                >
-                  <ContactRound className="w-5 h-5" />
-                </Link>
-              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    aria-label="Add friend"
+                    title="Add friend"
+                    className="p-2 rounded-md hover:bg-muted transition"
+                  >
+                    <UserPlus className="w-5 h-5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link href="/friends" className="flex items-center gap-2">
+                      <UserSquare className="w-4 h-4" />
+                      Your Friends
+                    </Link>
+                  </DropdownMenuItem>
 
-              {!pathname?.startsWith("/friends") && <UserMenu />}
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/friends/requestrecive"
+                      className="flex items-center gap-2"
+                    >
+                      <UserRoundCheck className="w-4 h-4" />
+                      Requests Received
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/friends/requestsend"
+                      className="flex items-center gap-2"
+                    >
+                      <UserRoundSearch className="w-4 h-4" />
+                      Search Friends
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {!pathname?.startsWith("/friends")}
             </div>
 
             <UserMenu />

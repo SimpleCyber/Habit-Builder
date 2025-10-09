@@ -37,7 +37,7 @@ export default function FriendsPage() {
         {friends.length === 0 ? (
           <div className="glass-effect rounded-2xl p-8 text-center">
             <Link
-              href="/friends/requestrecive"
+              href="/friends/requestsend"
               className="flex items-center gap-2"
             >
               <ContactRound className="w-16 h-16 mx-auto text-gray-400 mb-4" />

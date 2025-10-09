@@ -1,37 +1,37 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { signInWithEmail } from "@/lib/firebase-auth"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useState } from "react";
+import { signInWithEmail } from "@/lib/firebase-auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface LoginFormProps {
-  onSuccess: () => void
+  onSuccess: () => void;
 }
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    const { user, error } = await signInWithEmail(email, password)
+    const { user, error } = await signInWithEmail(email, password);
 
     if (error) {
-      setError(error)
-      setLoading(false)
+      setError(error);
+      setLoading(false);
     } else if (user) {
-      onSuccess()
+      onSuccess();
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -67,5 +67,5 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         {loading ? "Signing in..." : "Sign In"}
       </Button>
     </form>
-  )
+  );
 }

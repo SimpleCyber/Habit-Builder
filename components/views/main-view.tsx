@@ -1,33 +1,45 @@
-"use client"
+"use client";
 
-import { Plus, Inbox } from "lucide-react"
-import type { Task } from "@/lib/types"
-import { TaskCard } from "@/components/tasks/task-card"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { useState } from "react"
-import { UserMenu } from "@/components/layout/user-menu"
+import { Plus, Inbox } from "lucide-react";
+import type { Task } from "@/lib/types";
+import { TaskCard } from "@/components/tasks/task-card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useState } from "react";
+import { UserMenu } from "@/components/layout/user-menu";
 
-import Link from "next/link"
-import { Users } from "lucide-react"
+import Link from "next/link";
+import { Users } from "lucide-react";
 
 interface MainViewProps {
-  tasks: Task[]
-  onOpenTask: (taskId: string) => void
-  onOpenAddModal: () => void
-  darkMode: boolean
-  onToggleDarkMode: () => void
+  tasks: Task[];
+  onOpenTask: (taskId: string) => void;
+  onOpenAddModal: () => void;
+  darkMode: boolean;
+  onToggleDarkMode: () => void;
 }
 
-export function MainView({ tasks, onOpenTask, onOpenAddModal, darkMode, onToggleDarkMode }: MainViewProps) {
+export function MainView({
+  tasks,
+  onOpenTask,
+  onOpenAddModal,
+  darkMode,
+  onToggleDarkMode,
+}: MainViewProps) {
   const handleAddClick = () => {
     if (tasks.length >= 5) {
-      setShowMaxTasks(true)
-      return
+      setShowMaxTasks(true);
+      return;
     }
-    onOpenAddModal()
-  }
+    onOpenAddModal();
+  };
 
-  const [showMaxTasks, setShowMaxTasks] = useState(false)
+  const [showMaxTasks, setShowMaxTasks] = useState(false);
 
   return (
     <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">
@@ -38,17 +50,15 @@ export function MainView({ tasks, onOpenTask, onOpenAddModal, darkMode, onToggle
           </div>
           <div className="flex items-center gap-2">
             <Link
-            href="/friends"
-            aria-label="Friends"
-            title="Friends"
-            className="p-2 rounded-md hover:bg-muted transition"
-          >
-            <Users className="w-5 h-5" />
-          </Link>
-          
-            <UserMenu />
+              href="/friends"
+              aria-label="Friends"
+              title="Friends"
+              className="p-2 rounded-md hover:bg-muted transition"
+            >
+              <Users className="w-5 h-5" />
+            </Link>
 
-            
+            <UserMenu />
           </div>
         </div>
       </div>
@@ -57,11 +67,21 @@ export function MainView({ tasks, onOpenTask, onOpenAddModal, darkMode, onToggle
         {tasks.length === 0 ? (
           <div className="glass-effect rounded-2xl p-8 text-center">
             <Inbox className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-600 dark:text-gray-300 mb-2">No tasks yet!</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Click the + button to add your first task</p>
+            <p className="text-gray-600 dark:text-gray-300 mb-2">
+              No tasks yet!
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Click the + button to add your first task
+            </p>
           </div>
         ) : (
-          tasks.map((task) => <TaskCard key={task.id} task={task} onClick={() => onOpenTask(task.id)} />)
+          tasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onClick={() => onOpenTask(task.id)}
+            />
+          ))
         )}
       </div>
 
@@ -77,10 +97,12 @@ export function MainView({ tasks, onOpenTask, onOpenAddModal, darkMode, onToggle
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Task limit reached</DialogTitle>
-            <DialogDescription>You can create up to 5 tasks. Delete a task to add a new one.</DialogDescription>
+            <DialogDescription>
+              You can create up to 5 tasks. Delete a task to add a new one.
+            </DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

@@ -1,50 +1,110 @@
-"use client"
-import { signOut } from "@/lib/firebase-auth"
-import { useRouter, usePathname } from "next/navigation"
-import { UserMenu } from "@/components/layout/user-menu"
-import Link from "next/link"
-import { ContactRound , UserPlus } from "lucide-react"
+"use client";
+import { signOut } from "@/lib/firebase-auth";
+import { useRouter, usePathname } from "next/navigation";
+import { UserMenu } from "@/components/layout/user-menu";
+import Link from "next/link";
+import {
+  ContactRound,
+  UserPlus,
+  UserRoundCheck,
+  UserRoundSearch,
+  ArrowLeft,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
-  onPhotoClick?: () => void
+  onPhotoClick?: () => void;
 }
 
 export function Header({ onPhotoClick }: HeaderProps) {
-  const router = useRouter()
-  const pathname = usePathname() // detect friends route
+  const router = useRouter();
+  const pathname = usePathname();
 
   const handleSignOut = async () => {
-    await signOut()
-    router.push("/")
-  }
+    await signOut();
+    router.push("/");
+  };
+
+  const goback = async () => {
+    router.back();
+  };
 
   return (
-    <header className="bg-card  border-border sticky top-0 z-10">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">HabitX</h1>
-        <div className="flex items-center gap-3">
-          {pathname?.startsWith("/friends") ? (
-            <Link
-              href="/friends#add-friend"
-              aria-label="Add friend"
-              title="Add friend"
-              className="p-2 rounded-md hover:bg-muted transition"
-            >
-              <UserPlus className="w-5 h-5" />
-            </Link>
-          ) : (
-            <Link
-              href="/friends"
-              aria-label="Friends"
-              title="Friends"
-              className="p-2 rounded-md hover:bg-muted transition"
-            >
-              <ContactRound  className="w-5 h-5" />
-            </Link>
-          )}
-          {!pathname?.startsWith("/friends") && <UserMenu />}
+    <header className="w-full sticky top-0 z-10">
+      <div className="glass-effect rounded-2xl shadow-xl p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={goback}
+            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Back"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <button
+            onClick={() => router.push("/home")}
+            className="text-xl font-bold hover:opacity-90"
+            aria-label="Go to home"
+            title="Home"
+          >
+            HabitX
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {pathname?.startsWith("/friends") ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label="Add friend"
+                      title="Add friend"
+                      className="p-2 rounded-md hover:bg-muted transition"
+                    >
+                      <UserPlus className="w-5 h-5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/friends/requestrecive"
+                        className="flex items-center gap-2"
+                      >
+                        <UserRoundCheck className="w-4 h-4" />
+                        Requests Received
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/friends/requestsend"
+                        className="flex items-center gap-2"
+                      >
+                        <UserRoundSearch className="w-4 h-4" />
+                        Search Friends
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link
+                  href="/friends"
+                  aria-label="Friends"
+                  title="Friends"
+                  className="p-2 rounded-md hover:bg-muted transition"
+                >
+                  <ContactRound className="w-5 h-5" />
+                </Link>
+              )}
+
+              {!pathname?.startsWith("/friends") && <UserMenu />}
+            </div>
+
+            <UserMenu />
+          </div>
         </div>
       </div>
     </header>
-  )
+  );
 }

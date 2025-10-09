@@ -1,74 +1,80 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/hooks/use-auth"
-import { signInWithEmail, signUpWithEmail, signInWithGoogle } from "@/lib/firebase-auth"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Moon, Sun } from "lucide-react"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  signInWithEmail,
+  signUpWithEmail,
+  signInWithGoogle,
+} from "@/lib/firebase-auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Moon, Sun } from "lucide-react";
 
 export default function AuthPage() {
-  const router = useRouter()
-  const { user, loading } = useAuth()
-  const [isLogin, setIsLogin] = useState(true)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [authLoading, setAuthLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [darkMode, setDarkMode] = useState(false)
+  const router = useRouter();
+  const { user, loading } = useAuth();
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
-      router.push("/home")
+      router.push("/home");
     }
-  }, [user, loading, router])
+  }, [user, loading, router]);
 
   useEffect(() => {
-    const isDark = localStorage.getItem("darkMode") === "true"
-    setDarkMode(isDark)
+    const isDark = localStorage.getItem("darkMode") === "true";
+    setDarkMode(isDark);
     if (isDark) {
-      document.documentElement.classList.add("dark")
+      document.documentElement.classList.add("dark");
     }
-  }, [])
+  }, []);
 
   const toggleDarkMode = () => {
-    const newDarkMode = !darkMode
-    setDarkMode(newDarkMode)
-    localStorage.setItem("darkMode", String(newDarkMode))
-    document.documentElement.classList.toggle("dark")
-  }
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    localStorage.setItem("darkMode", String(newDarkMode));
+    document.documentElement.classList.toggle("dark");
+  };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setAuthLoading(true)
+    e.preventDefault();
+    setError("");
+    setAuthLoading(true);
 
-    const { user, error } = isLogin ? await signInWithEmail(email, password) : await signUpWithEmail(email, password)
+    const { user, error } = isLogin
+      ? await signInWithEmail(email, password)
+      : await signUpWithEmail(email, password);
 
     if (error) {
-      setError(error)
-      setAuthLoading(false)
+      setError(error);
+      setAuthLoading(false);
     } else if (user) {
-      router.push("/home")
+      router.push("/home");
     }
-  }
+  };
 
   const handleGoogleAuth = async () => {
-    setError("")
-    setAuthLoading(true)
+    setError("");
+    setAuthLoading(true);
 
-    const { user, error } = await signInWithGoogle()
+    const { user, error } = await signInWithGoogle();
 
     if (error) {
-      setError(error)
-      setAuthLoading(false)
+      setError(error);
+      setAuthLoading(false);
     } else if (user) {
-      router.push("/home")
+      router.push("/home");
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -78,7 +84,7 @@ export default function AuthPage() {
           <p className="mt-4 text-muted-foreground">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -89,14 +95,20 @@ export default function AuthPage() {
             onClick={toggleDarkMode}
             className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            {darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+            {darkMode ? (
+              <Sun className="w-6 h-6" />
+            ) : (
+              <Moon className="w-6 h-6" />
+            )}
           </button>
         </div>
 
         <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent dark:from-purple-400 dark:to-blue-400 mb-2 text-center">
           HabitX
         </h1>
-        <p className="text-center text-muted-foreground mb-8">Daily Task Tracker</p>
+        <p className="text-center text-muted-foreground mb-8">
+          Daily Task Tracker
+        </p>
 
         <div className="flex gap-2 mb-6">
           <button
@@ -139,7 +151,9 @@ export default function AuthPage() {
             className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           />
 
-          {error && <p className="text-sm text-destructive text-center">{error}</p>}
+          {error && (
+            <p className="text-sm text-destructive text-center">{error}</p>
+          )}
 
           <Button
             type="submit"
@@ -155,7 +169,9 @@ export default function AuthPage() {
             <span className="w-full border-t border-gray-300 dark:border-gray-600" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white dark:bg-gray-800 px-2 text-muted-foreground">Or</span>
+            <span className="bg-white dark:bg-gray-800 px-2 text-muted-foreground">
+              Or
+            </span>
           </div>
         </div>
 
@@ -187,5 +203,5 @@ export default function AuthPage() {
         </Button>
       </div>
     </div>
-  )
+  );
 }

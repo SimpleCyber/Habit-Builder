@@ -1,36 +1,47 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import type { Task } from "@/lib/types"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Icon } from "@/components/ui/icon"
+import { useState } from "react";
+import type { Task } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Icon } from "@/components/ui/icon";
 
 interface AddTaskModalProps {
-  onClose: () => void
-  onAdd: (task: Omit<Task, "id" | "createdAt" | "iconBg">) => Promise<void>
-  maxTasks: boolean
+  onClose: () => void;
+  onAdd: (task: Omit<Task, "id" | "createdAt" | "iconBg">) => Promise<void>;
+  maxTasks: boolean;
 }
 
-const commonIcons = ["target", "book", "dumbbell", "code", "heart", "music", "palette", "camera", "briefcase", "coffee"]
+const commonIcons = [
+  "target",
+  "book",
+  "dumbbell",
+  "code",
+  "heart",
+  "music",
+  "palette",
+  "camera",
+  "briefcase",
+  "coffee",
+];
 
 export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
-  const [title, setTitle] = useState("")
-  const [reason, setReason] = useState("")
-  const [selectedIcon, setSelectedIcon] = useState("target")
-  const [error, setError] = useState("")
+  const [title, setTitle] = useState("");
+  const [reason, setReason] = useState("");
+  const [selectedIcon, setSelectedIcon] = useState("target");
+  const [error, setError] = useState("");
 
   const handleSubmit = async () => {
     if (!title.trim() || !reason.trim()) {
-      setError("Please fill in all fields.")
-      return
+      setError("Please fill in all fields.");
+      return;
     }
     if (maxTasks) {
-      setError("Maximum 5 tasks allowed.")
-      return
+      setError("Maximum 5 tasks allowed.");
+      return;
     }
-    setError("")
+    setError("");
     await onAdd({
       title,
       reason,
@@ -38,9 +49,9 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
       streak: 0,
       lastUpdate: null,
       history: [],
-    })
-    onClose()
-  }
+    });
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -65,7 +76,9 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
         />
 
         <div className="mb-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Choose an icon:</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+            Choose an icon:
+          </p>
           <div className="grid grid-cols-5 gap-2">
             {commonIcons.map((icon) => (
               <button
@@ -81,7 +94,9 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
           </div>
         </div>
 
-        <div className="mb-3">{error && <p className="text-sm text-destructive">{error}</p>}</div>
+        <div className="mb-3">
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </div>
 
         <div className="flex space-x-3">
           <Button
@@ -99,5 +114,5 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

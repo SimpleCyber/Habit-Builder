@@ -1,8 +1,8 @@
 import {
   collection,
   doc,
-  where, 
-  addDoc, 
+  where,
+  addDoc,
   updateDoc,
   setDoc,
   getDoc,
@@ -16,7 +16,6 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 
-
 export interface Task {
   id: string;
   title: string;
@@ -28,8 +27,6 @@ export interface Task {
   createdAt: string;
   iconBg?: string;
   visibility?: "public" | "private";
-
-
 }
 
 export interface TaskHistoryEntry {
@@ -89,7 +86,7 @@ export const saveUserData = async (userId: string, data: Partial<UserData>) => {
 export const getPaginatedHistory = async (
   userId: string,
   pageSize = 10,
-  lastDoc?: DocumentSnapshot
+  lastDoc?: DocumentSnapshot,
 ) => {
   try {
     const historyRef = collection(db, "users", userId, "history");
@@ -100,7 +97,7 @@ export const getPaginatedHistory = async (
         historyRef,
         orderBy("timestamp", "desc"),
         startAfter(lastDoc),
-        limit(pageSize)
+        limit(pageSize),
       );
     }
 
@@ -133,7 +130,7 @@ export const getPaginatedHistory = async (
 // Add history entry
 export const addHistoryEntry = async (
   userId: string,
-  entry: Omit<HistoryEntry, "id" | "timestamp">
+  entry: Omit<HistoryEntry, "id" | "timestamp">,
 ) => {
   try {
     const historyRef = collection(db, "users", userId, "history");
@@ -164,8 +161,6 @@ export const deleteTask = async (userId: string, taskId: string) => {
   }
 };
 
-
-
 // export async function ensureUserProfile(uid: string, email: string) {
 //   const d = doc(db, "users", uid)
 //   const snap = await getDoc(d)
@@ -174,9 +169,6 @@ export const deleteTask = async (userId: string, taskId: string) => {
 //   }
 // }
 
-
-
-
 // export async function findUserByEmail(email: string) {
 //   const q = query(collection(db, "users"), where("email", "==", email))
 //   const snap = await getDocs(q)
@@ -184,9 +176,6 @@ export const deleteTask = async (userId: string, taskId: string) => {
 //   const docSnap = snap.docs[0]
 //   return { uid: docSnap.id, email: docSnap.data().email }
 // }
-
-
-
 
 // export async function sendFriendRequest(fromUid: string, toUid: string, toEmail: string) {
 //   await addDoc(collection(db, "friendRequests"), {
@@ -198,8 +187,6 @@ export const deleteTask = async (userId: string, taskId: string) => {
 //     createdAt: Date.now(),
 //   })
 // }
-
-
 
 // export async function getIncomingRequests(myUid: string) {
 //   const q = query(collection(db, "friendRequests"), where("toUid", "==", myUid), where("status", "==", "pending"))
@@ -215,8 +202,6 @@ export const deleteTask = async (userId: string, taskId: string) => {
 //   }))
 // }
 
-
-
 // export async function grantTaskAccess(myUid: string, requestId: string, taskIds: string[]) {
 //   const reqDoc = doc(db, "friendRequests", requestId)
 //   const reqData = (await getDoc(reqDoc)).data()
@@ -230,8 +215,6 @@ export const deleteTask = async (userId: string, taskId: string) => {
 //   await updateDoc(reqDoc, { status: "accepted" })
 // }
 
-
-
 // export async function getMyFriends(myUid: string) {
 //   const q = query(collection(db, "friendRequests"), where("fromUid", "==", myUid), where("status", "==", "accepted"))
 //   const snap = await getDocs(q)
@@ -243,7 +226,6 @@ export const deleteTask = async (userId: string, taskId: string) => {
 //   )
 //   return users
 // }
-
 
 // export async function getViewableTasksByFriend(friendUid: string, viewerUid: string) {
 //   // Tasks are viewable if: visibility == 'public' OR in a grant where viewerUid matches
@@ -259,18 +241,12 @@ export const deleteTask = async (userId: string, taskId: string) => {
 //   return all.filter((t: any) => t.visibility === "public" || grantedIds.has(t.id))
 // }
 
-
-
-
-
 // export async function getUserProfile(uid: string) {
 //   const snap = await getDoc(doc(db, "users", uid))
 //   if (!snap.exists()) return null
 //   const d = snap.data() as any
 //   return { uid, email: d.email, name: d.name || null, photoURL: d.photoURL || null }
 // }
-
-
 
 // export async function searchUsers(term: string) {
 //   const qEmail = query(collection(db, "users"), where("email", ">=", term), where("email", "<=", term + "\uf8ff"))
@@ -289,12 +265,6 @@ export const deleteTask = async (userId: string, taskId: string) => {
 //     photoURL: u.photoURL || null,
 //   }))
 // }
-
-
-
-
-
-
 
 // export async function ensureUserProfile(uid: string, email: string, name?: string | null, photoURL?: string | null) {
 //   const ref = doc(db, "users", uid)
@@ -415,14 +385,14 @@ export const deleteTask = async (userId: string, taskId: string) => {
 //   return { uid, email: d.email, name: d.name || null, photoURL: d.photoURL || null }
 // }
 
-
-
-
-
-
-export async function ensureUserProfile(uid: string, email: string, name?: string | null, photoURL?: string | null) {
-  const ref = doc(db, "users", uid)
-  const snap = await getDoc(ref)
+export async function ensureUserProfile(
+  uid: string,
+  email: string,
+  name?: string | null,
+  photoURL?: string | null,
+) {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
   const base = {
     uid,
     email,
@@ -430,63 +400,84 @@ export async function ensureUserProfile(uid: string, email: string, name?: strin
     name: name || null,
     nameLower: (name || "").toLowerCase() || null,
     photoURL: photoURL || null,
-  }
+  };
   if (!snap.exists()) {
-    await setDoc(ref, { ...base, createdAt: Date.now() })
+    await setDoc(ref, { ...base, createdAt: Date.now() });
   } else {
-    const data = snap.data() || {}
+    const data = snap.data() || {};
     const next = {
       ...data,
       ...base,
       createdAt: data.createdAt || Date.now(),
-    }
-    await setDoc(ref, next, { merge: true })
+    };
+    await setDoc(ref, next, { merge: true });
   }
 }
 // </CHANGE>
 
 export async function findUserByEmail(email: string) {
-  const q = query(collection(db, "users"), where("email", "==", email))
-  const snap = await getDocs(q)
-  if (snap.empty) return null
-  const docSnap = snap.docs[0]
-  return { uid: docSnap.id, email: docSnap.data().email }
+  const q = query(collection(db, "users"), where("email", "==", email));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const docSnap = snap.docs[0];
+  return { uid: docSnap.id, email: docSnap.data().email };
 }
 
-export async function sendFriendRequest(toUid: string, type: "all" | "specific" = "all") {
-  const fromUid = (await getDoc(doc(db, "users", toUid))).id // placeholder; in real usage pass fromUid
+export async function sendFriendRequest(
+  toUid: string,
+  type: "all" | "specific" = "all",
+) {
+  const fromUid = (await getDoc(doc(db, "users", toUid))).id; // placeholder; in real usage pass fromUid
   await addDoc(collection(db, "friendRequests"), {
     fromUid,
     toUid,
     status: "pending",
     type,
     createdAt: Date.now(),
-  })
+  });
 }
 // </CHANGE>
 
 export async function getSentRequests() {
   // In real usage, pass the current user's uid; for now we'll return empty
-  return []
+  return [];
 }
 // </CHANGE>
 
 export async function getReceivedRequests() {
-  return []
+  return [];
 }
 // </CHANGE>
 
-export async function respondToRequest(requestId: string, status: "accepted" | "rejected") {
-  await updateDoc(doc(db, "friendRequests", requestId), { status })
+export async function respondToRequest(
+  requestId: string,
+  status: "accepted" | "rejected",
+) {
+  await updateDoc(doc(db, "friendRequests", requestId), { status });
 }
 // </CHANGE>
 
 export async function getIncomingRequests(myUid: string) {
-  const qReq = query(collection(db, "friendRequests"), where("toUid", "==", myUid), where("status", "==", "pending"))
-  const [snap, meSnap] = await Promise.all([getDocs(qReq), getDoc(doc(db, "users", myUid))])
-  const myTasks = (meSnap.data()?.tasks || []).map((t: any) => ({ id: t.id, title: t.title }))
-  const availableTaskIds = myTasks.map((t: any) => t.id)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data(), availableTasks: myTasks, availableTaskIds }))
+  const qReq = query(
+    collection(db, "friendRequests"),
+    where("toUid", "==", myUid),
+    where("status", "==", "pending"),
+  );
+  const [snap, meSnap] = await Promise.all([
+    getDocs(qReq),
+    getDoc(doc(db, "users", myUid)),
+  ]);
+  const myTasks = (meSnap.data()?.tasks || []).map((t: any) => ({
+    id: t.id,
+    title: t.title,
+  }));
+  const availableTaskIds = myTasks.map((t: any) => t.id);
+  return snap.docs.map((d) => ({
+    id: d.id,
+    ...d.data(),
+    availableTasks: myTasks,
+    availableTaskIds,
+  }));
 }
 
 export async function getMyFriends(myUid: string) {
@@ -494,57 +485,88 @@ export async function getMyFriends(myUid: string) {
     collection(db, "friendRequests"),
     where("fromUid", "==", myUid),
     where("status", "==", "accepted"),
-  )
+  );
   const qReceived = query(
     collection(db, "friendRequests"),
     where("toUid", "==", myUid),
     where("status", "==", "accepted"),
-  )
-  const [sSent, sReceived] = await Promise.all([getDocs(qSent), getDocs(qReceived)])
-  const friendUids = new Set<string>()
-  sSent.forEach((d) => friendUids.add(d.data().toUid))
-  sReceived.forEach((d) => friendUids.add(d.data().fromUid))
+  );
+  const [sSent, sReceived] = await Promise.all([
+    getDocs(qSent),
+    getDocs(qReceived),
+  ]);
+  const friendUids = new Set<string>();
+  sSent.forEach((d) => friendUids.add(d.data().toUid));
+  sReceived.forEach((d) => friendUids.add(d.data().fromUid));
   const users = await Promise.all(
     Array.from(friendUids).map(async (uid) => {
-      const uSnap = await getDoc(doc(db, "users", uid))
-      const u = uSnap.data() || {}
-      return { uid, email: u.email || "", name: u.name || null, photoURL: u.photoURL || null }
+      const uSnap = await getDoc(doc(db, "users", uid));
+      const u = uSnap.data() || {};
+      return {
+        uid,
+        email: u.email || "",
+        name: u.name || null,
+        photoURL: u.photoURL || null,
+      };
     }),
-  )
-  return users
+  );
+  return users;
 }
 // </CHANGE>
 
 export async function getOutgoingRequests(myUid: string) {
-  const qReq = query(collection(db, "friendRequests"), where("fromUid", "==", myUid))
-  const snap = await getDocs(qReq)
-  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }))
+  const qReq = query(
+    collection(db, "friendRequests"),
+    where("fromUid", "==", myUid),
+  );
+  const snap = await getDocs(qReq);
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
 }
 
-export async function getViewableTasksByFriend(friendUid: string, viewerUid: string) {
+export async function getViewableTasksByFriend(
+  friendUid: string,
+  viewerUid: string,
+) {
   const [friendDoc, grantsSnap] = await Promise.all([
     getDoc(doc(db, "users", friendUid)),
-    getDocs(query(collection(db, "users", friendUid, "grants"), where("viewerUid", "==", viewerUid))),
-  ])
-  const tasks = (friendDoc.data()?.tasks || []) as any[]
-  const grantedIds = new Set<string>()
-  grantsSnap.forEach((g) => (g.data().taskIds || []).forEach((id: string) => grantedIds.add(id)))
-  return tasks.filter((t) => t.visibility === "public" || grantedIds.has(t.id))
+    getDocs(
+      query(
+        collection(db, "users", friendUid, "grants"),
+        where("viewerUid", "==", viewerUid),
+      ),
+    ),
+  ]);
+  const tasks = (friendDoc.data()?.tasks || []) as any[];
+  const grantedIds = new Set<string>();
+  grantsSnap.forEach((g) =>
+    (g.data().taskIds || []).forEach((id: string) => grantedIds.add(id)),
+  );
+  return tasks.filter((t) => t.visibility === "public" || grantedIds.has(t.id));
 }
 
 export async function searchUsers(term: string) {
-  const q = term.toLowerCase()
-  const qEmail = query(collection(db, "users"), where("emailLower", ">=", q), where("emailLower", "<=", q + "\uf8ff"))
-  const qName = query(collection(db, "users"), where("nameLower", ">=", q), where("nameLower", "<=", q + "\uf8ff"))
-  const [sEmail, sName] = await Promise.all([getDocs(qEmail), getDocs(qName)])
+  const q = term.toLowerCase();
+  const qEmail = query(
+    collection(db, "users"),
+    where("emailLower", ">=", q),
+    where("emailLower", "<=", q + "\uf8ff"),
+  );
+  const qName = query(
+    collection(db, "users"),
+    where("nameLower", ">=", q),
+    where("nameLower", "<=", q + "\uf8ff"),
+  );
+  const [sEmail, sName] = await Promise.all([getDocs(qEmail), getDocs(qName)]);
 
-  const dedup = new Map<string, any>()
-  sEmail.forEach((d) => dedup.set(d.id, { uid: d.id, ...(d.data() as any) }))
-  sName.forEach((d) => dedup.set(d.id, { uid: d.id, ...(d.data() as any) }))
+  const dedup = new Map<string, any>();
+  sEmail.forEach((d) => dedup.set(d.id, { uid: d.id, ...(d.data() as any) }));
+  sName.forEach((d) => dedup.set(d.id, { uid: d.id, ...(d.data() as any) }));
 
   if (dedup.size === 0) {
-    const eq = await getDocs(query(collection(db, "users"), where("email", "==", term)))
-    eq.forEach((d) => dedup.set(d.id, { uid: d.id, ...(d.data() as any) }))
+    const eq = await getDocs(
+      query(collection(db, "users"), where("email", "==", term)),
+    );
+    eq.forEach((d) => dedup.set(d.id, { uid: d.id, ...(d.data() as any) }));
   }
 
   return Array.from(dedup.values()).map((u: any) => ({
@@ -553,18 +575,31 @@ export async function searchUsers(term: string) {
     name: u.name || null,
     photoURL: u.photoURL || null,
     displayName: u.name || u.email || "Unknown",
-  }))
+  }));
 }
 // </CHANGE>
 
 export async function getUserProfile(uid: string) {
-  const snap = await getDoc(doc(db, "users", uid))
-  if (!snap.exists()) return null
-  const d = snap.data() as any
-  return { uid, email: d.email, name: d.name || null, photoURL: d.photoURL || null, displayName: d.name || d.email }
+  const snap = await getDoc(doc(db, "users", uid));
+  if (!snap.exists()) return null;
+  const d = snap.data() as any;
+  return {
+    uid,
+    email: d.email,
+    name: d.name || null,
+    photoURL: d.photoURL || null,
+    displayName: d.name || d.email,
+  };
 }
 
-export async function grantTaskAccess(ownerUid: string, requestId: string, taskIds: string[]) {
-  await updateDoc(doc(db, "friendRequests", requestId), { status: "accepted", grantedTaskIds: taskIds })
+export async function grantTaskAccess(
+  ownerUid: string,
+  requestId: string,
+  taskIds: string[],
+) {
+  await updateDoc(doc(db, "friendRequests", requestId), {
+    status: "accepted",
+    grantedTaskIds: taskIds,
+  });
 }
 // </CHANGE>

@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { Flame } from "lucide-react"
+import { Flame } from "lucide-react";
 
 interface StreakDisplayProps {
-  streak: number
+  streak: number;
 }
 
 export function StreakDisplay({ streak }: StreakDisplayProps) {
@@ -17,5 +17,5 @@ export function StreakDisplay({ streak }: StreakDisplayProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

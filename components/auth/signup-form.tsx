@@ -1,48 +1,48 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { signUpWithEmail } from "@/lib/firebase-auth"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useState } from "react";
+import { signUpWithEmail } from "@/lib/firebase-auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface SignupFormProps {
-  onSuccess: () => void
+  onSuccess: () => void;
 }
 
 export function SignupForm({ onSuccess }: SignupFormProps) {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
+    e.preventDefault();
+    setError("");
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
+      setError("Passwords do not match");
+      return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters")
-      return
+      setError("Password must be at least 6 characters");
+      return;
     }
 
-    setLoading(true)
-    const { user, error } = await signUpWithEmail(email, password)
+    setLoading(true);
+    const { user, error } = await signUpWithEmail(email, password);
 
     if (error) {
-      setError(error)
-      setLoading(false)
+      setError(error);
+      setLoading(false);
     } else if (user) {
-      onSuccess()
+      onSuccess();
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -91,5 +91,5 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
         {loading ? "Creating account..." : "Sign Up"}
       </Button>
     </form>
-  )
+  );
 }

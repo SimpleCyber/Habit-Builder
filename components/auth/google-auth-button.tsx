@@ -1,30 +1,30 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { signInWithGoogle } from "@/lib/firebase-auth"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { signInWithGoogle } from "@/lib/firebase-auth";
+import { Button } from "@/components/ui/button";
 
 interface GoogleAuthButtonProps {
-  onSuccess: () => void
+  onSuccess: () => void;
 }
 
 export function GoogleAuthButton({ onSuccess }: GoogleAuthButtonProps) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleGoogleSignIn = async () => {
-    setError("")
-    setLoading(true)
+    setError("");
+    setLoading(true);
 
-    const { user, error } = await signInWithGoogle()
+    const { user, error } = await signInWithGoogle();
 
     if (error) {
-      setError(error)
-      setLoading(false)
+      setError(error);
+      setLoading(false);
     } else if (user) {
-      onSuccess()
+      onSuccess();
     }
-  }
+  };
 
   return (
     <div className="space-y-2">
@@ -57,5 +57,5 @@ export function GoogleAuthButton({ onSuccess }: GoogleAuthButtonProps) {
       </Button>
       {error && <p className="text-sm text-destructive text-center">{error}</p>}
     </div>
-  )
+  );
 }

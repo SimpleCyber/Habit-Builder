@@ -111,7 +111,7 @@ export function TaskDetailView({
   };
 
   return (
-    <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-6xl p-4 sm:p-6">
+    <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">
       <Header />
 
       <div className="mb-5">

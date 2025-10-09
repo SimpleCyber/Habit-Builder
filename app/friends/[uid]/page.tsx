@@ -27,7 +27,7 @@ export default function FriendTasksPage() {
   }, [user, params?.uid]);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6">
+    <main className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">
       <Header />
       {profile && (
         <div className="glass-effect rounded-2xl p-4 mb-4 flex items-center gap-3">
@@ -49,7 +49,7 @@ export default function FriendTasksPage() {
         </div>
       )}
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-1 lg:grid-cols-1 gap-4">
         {tasks.map((task) => (
           <TaskCard key={task.id} task={task} readOnly />
         ))}

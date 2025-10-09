@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Header } from "@/components/layout/header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+
 export default function FriendsPage() {
   const { user } = useAuth();
   const [friends, setFriends] = useState<any[]>([]);
@@ -34,26 +35,13 @@ export default function FriendsPage() {
       <main className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">
         <Header />
 
-        {friends.length === 0 ? (
-          <div className="glass-effect rounded-2xl p-8 text-center">
-            <Link
-              href="/friends/requestsend"
-              className="flex items-center gap-2"
-            >
-              <ContactRound className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            </Link>
-            <p className="text-gray-600 dark:text-gray-300 mb-2">
-              No friends yet!
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Add friends to start building your circle.
-            </p>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div className="text-gray-700 dark:text-gray-200 font-medium text-lg mb-3">
+        {friends.length != 0 ? (
+         <>
+          <div className="text-gray-700 dark:text-gray-200 font-medium text-lg mb-3">
               Your Friends
-            </div>
+          </div>
+          <div className="grid md:grid-cols-1 lg:grid-cols-1 gap-3">
+            
             {friends.map((f) => (
               <Link
                 key={f.uid}
@@ -83,7 +71,30 @@ export default function FriendsPage() {
                 </div>
               </Link>
             ))}
+
           </div>
+
+          </>
+
+
+
+        ) : (
+  <div className="glass-effect rounded-2xl p-8 text-center">
+            <Link
+                        href="/friends/requestrecive"
+                        className="flex items-center gap-2"
+                      >
+            <ContactRound className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+            </Link>
+            <p className="text-gray-600 dark:text-gray-300 mb-2">
+              No friends yet!
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Add friends to start building your circle.
+            </p>
+            
+          </div>
+         
         )}
       </main>
     </>

@@ -8,6 +8,7 @@ export interface Task {
   lastUpdate: string | null
   history: HistoryEntry[]
   createdAt: string
+  visibility?: "public" | "private"
 }
 
 export interface HistoryEntry {

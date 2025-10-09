@@ -6,22 +6,24 @@ import { Icon } from "@/components/ui/icon"
 
 interface TaskCardProps {
   task: Task
-  onClick: () => void
+  onClick?: () => void
+  readOnly?: boolean
+  // </CHANGE>
 }
 
-export function TaskCard({ task, onClick }: TaskCardProps) {
+export function TaskCard({ task, onClick, readOnly }: TaskCardProps) {
   const today = new Date().toDateString()
   const checkedToday = task.history.some((h) => new Date(h.date).toDateString() === today)
 
   return (
     <div
-      className="task-card glass-effect rounded-2xl p-4 cursor-pointer hover:shadow-md shadow-lg transition-all"
-      onClick={onClick}
+      className={`task-card glass-effect rounded-2xl p-4 shadow-md hover:shadow-lg transition-all ${!readOnly ? "cursor-pointer" : ""}`}
+      onClick={readOnly ? undefined : onClick}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center"
+            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 aspect-square"
             style={{ backgroundColor: task.iconBg || "hsl(220 75% 88%)" }}
           >
             <Icon name={task.icon} className="w-6 h-6 text-gray-800" />

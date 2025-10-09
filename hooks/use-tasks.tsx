@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { useAuth } from "./use-auth"
 import { getUserData, saveUserData, deleteTask as deleteTaskFromDb, type Task } from "@/lib/firebase-db"
 
+
+
 export const useTasks = () => {
   const { user } = useAuth()
   const [tasks, setTasks] = useState<Task[]>([])
@@ -29,13 +31,23 @@ export const useTasks = () => {
     setLoading(false)
   }
 
-  const addTask = async (taskData: Omit<Task, "id" | "createdAt">) => {
+  const addTask = async (taskData: Omit<Task, "id" | "createdAt" | "iconBg">) => {
     if (!user || tasks.length >= 5) return
+
+    const randomPastel = () => {
+      const hues = [10, 25, 45, 90, 150, 190, 220, 260, 290, 330] // warm to cool spread
+      const h = hues[Math.floor(Math.random() * hues.length)]
+      const s = 70 + Math.floor(Math.random() * 10) // 70-80%
+      const l = 85 + Math.floor(Math.random() * 5) // 85-90%
+      return `hsl(${h} ${s}% ${l}%)`
+    }
 
     const newTask: Task = {
       ...taskData,
+      iconBg: randomPastel(),
       id: Date.now().toString(),
       createdAt: new Date().toISOString(),
+      visibility: "private", // default to private; owner can toggle to public
     }
 
     const updatedTasks = [...tasks, newTask]
@@ -46,7 +58,12 @@ export const useTasks = () => {
   const updateTask = async (taskId: string, updates: Partial<Task>) => {
     if (!user) return
 
-    const updatedTasks = tasks.map((task) => (task.id === taskId ? { ...task, ...updates } : task))
+    const ensureIconBg = (t: Task): Task =>
+      t.iconBg ? t : { ...t, iconBg: `hsl(${Math.floor(Math.random() * 360)} 75% 88%)` }
+
+    const updatedTasks = tasks.map((task) =>
+      task.id === taskId ? ensureIconBg({ ...task, ...updates }) : ensureIconBg(task),
+    )
     setTasks(updatedTasks)
     await saveUserData(user.uid, { tasks: updatedTasks })
   }

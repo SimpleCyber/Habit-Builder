@@ -7,6 +7,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useState } from "react"
 import { UserMenu } from "@/components/layout/user-menu"
 
+import Link from "next/link"
+import { Users } from "lucide-react"
+
 interface MainViewProps {
   tasks: Task[]
   onOpenTask: (taskId: string) => void
@@ -34,7 +37,18 @@ export function MainView({ tasks, onOpenTask, onOpenAddModal, darkMode, onToggle
             <h1 className="text-2xl font-bold">HabitX</h1>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+            href="/friends"
+            aria-label="Friends"
+            title="Friends"
+            className="p-2 rounded-md hover:bg-muted transition"
+          >
+            <Users className="w-5 h-5" />
+          </Link>
+          
             <UserMenu />
+
+            
           </div>
         </div>
       </div>

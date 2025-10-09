@@ -12,18 +12,17 @@ export const getTodayString = (): string => {
 
 export const calculateStreak = (lastCheckIn: string): number => {
   if (!lastCheckIn) return 0
-
   const today = getTodayString()
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1)
   const yesterdayString = yesterday.toISOString().split("T")[0]
 
   if (lastCheckIn === today) {
-    return 1 // Continue current streak
+    return 1
   } else if (lastCheckIn === yesterdayString) {
-    return 1 // Can increment streak
+    return 1
   } else {
-    return 0 // Streak broken
+    return 0
   }
 }
 

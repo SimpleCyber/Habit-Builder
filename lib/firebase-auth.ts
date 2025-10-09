@@ -6,11 +6,14 @@ import {
   signOut as firebaseSignOut,
 } from "firebase/auth"
 import { auth } from "./firebase"
+import { ensureUserProfile } from "@/lib/firebase-db" //
 
 export const signInWithEmail = async (email: string, password: string) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password)
-    return { user: userCredential.user, error: null }
+    const u = userCredential.user
+    await ensureUserProfile(u.uid, u.email || "", u.displayName || null, u.photoURL || null) //
+    return { user: u, error: null }
   } catch (error: any) {
     return { user: null, error: error.message }
   }
@@ -19,7 +22,9 @@ export const signInWithEmail = async (email: string, password: string) => {
 export const signUpWithEmail = async (email: string, password: string) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-    return { user: userCredential.user, error: null }
+    const u = userCredential.user
+    await ensureUserProfile(u.uid, u.email || "", u.displayName || null, u.photoURL || null) //
+    return { user: u, error: null }
   } catch (error: any) {
     return { user: null, error: error.message }
   }
@@ -29,7 +34,9 @@ export const signInWithGoogle = async () => {
   try {
     const provider = new GoogleAuthProvider()
     const userCredential = await signInWithPopup(auth, provider)
-    return { user: userCredential.user, error: null }
+    const u = userCredential.user
+    await ensureUserProfile(u.uid, u.email || "", u.displayName || null, u.photoURL || null) //
+    return { user: u, error: null }
   } catch (error: any) {
     return { user: null, error: error.message }
   }

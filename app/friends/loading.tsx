@@ -1,3 +1,10 @@
+import { Suspense } from "react";
+
+
+
 export default function Loading() {
-  return null;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+   </Suspense>
+  );
 }

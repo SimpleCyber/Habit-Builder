@@ -134,29 +134,39 @@ export function TaskDetailView({
         </div>
       </div>
 
-      {/* <div className="mb-5 flex w-full gap-1">
-      <TaskCard key={task.id} task={task} readOnly />
-                 <button
-              onClick={toggleVisibility}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              title={visibility === "public" ? "Public (click to make private)" : "Private (click to make public)"}
-              aria-label={visibility === "public" ? "Make private" : "Make public"}
-            >
-              {visibility === "public" ? (
-                <Eye className="w-5 h-5 text-green-600" />
-              ) : (
-                <EyeOff className="w-5 h-5 text-gray-500" />
-              )}
-            </button>
-    </div> */}
+      <div className="mb-5">
+        <TaskCard key={task.id} task={task} readOnly />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-6">
           {/* Check-in Section */}
+
           <div className="glass-effect rounded-2xl shadow-xl p-6">
-            <h3 className="text-xl font-bold mb-4">
-              {alreadyChecked ? "Today's Update" : "Update Today"}
-            </h3>
+            <div className="flex items-center justify-between w-full">
+              <h3 className="text-xl font-bold mb-4">
+                {alreadyChecked ? "Today's Update" : "Update Today"}
+              </h3>
+
+              <button
+                onClick={toggleVisibility}
+                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                title={
+                  visibility === "public"
+                    ? "Public (click to make private)"
+                    : "Private (click to make public)"
+                }
+                aria-label={
+                  visibility === "public" ? "Make private" : "Make public"
+                }
+              >
+                {visibility === "public" ? (
+                  <Eye className="w-5 h-5 text-green-600" />
+                ) : (
+                  <EyeOff className="w-5 h-5 text-gray-500" />
+                )}
+              </button>
+            </div>
 
             {formError && (
               <p className="text-sm text-destructive mb-2">{formError}</p>

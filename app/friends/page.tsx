@@ -36,7 +36,12 @@ export default function FriendsPage() {
 
         {friends.length === 0 ? (
           <div className="glass-effect rounded-2xl p-8 text-center">
-            <ContactRound className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+            <Link
+              href="/friends/requestrecive"
+              className="flex items-center gap-2"
+            >
+              <ContactRound className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+            </Link>
             <p className="text-gray-600 dark:text-gray-300 mb-2">
               No friends yet!
             </p>

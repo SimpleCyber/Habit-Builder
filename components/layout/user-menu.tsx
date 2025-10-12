@@ -29,6 +29,18 @@ export function UserMenu() {
     return () => unsub();
   }, []);
 
+  React.useEffect(() => {
+    if (typeof document === "undefined") return;
+    try {
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    } catch {}
+  }, []);
+
   const initials =
     user?.displayName
       ?.split(" ")

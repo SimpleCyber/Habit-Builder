@@ -13,7 +13,7 @@ export default function FriendRequestReceivePage() {
 
   useEffect(() => {
     if (!user) return;
-    
+
     const loadRequests = async () => {
       setLoading(true);
       try {
@@ -25,7 +25,7 @@ export default function FriendRequestReceivePage() {
         setLoading(false);
       }
     };
-    
+
     loadRequests();
   }, [user]);
 
@@ -62,54 +62,58 @@ export default function FriendRequestReceivePage() {
       <Header />
       <div className="glass-effect rounded-2xl p-4">
         <h2 className="font-semibold mb-2">Incoming requests</h2>
-        
+
         {loading && (
           <p className="text-sm text-muted-foreground">Loading requests...</p>
         )}
-        
+
         <div className="space-y-2">
-          {!loading && incoming.map((r: any) => {
-            const displayName = r.fromName || r.fromEmail || "Unknown";
-            const initials = getInitials(displayName, r.fromEmail);
-            
-            return (
-              <div
-                key={r.id}
-                className="flex items-center justify-between rounded-lg border p-3"
-              >
-                <div className="flex items-center gap-3 flex-1">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={r.fromPhotoURL || ""} alt={displayName} />
-                    <AvatarFallback className="text-xs">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="font-medium">{displayName}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {r.type === "all"
-                        ? "Request all tasks"
-                        : "Request selected tasks"}
+          {!loading &&
+            incoming.map((r: any) => {
+              const displayName = r.fromName || r.fromEmail || "Unknown";
+              const initials = getInitials(displayName, r.fromEmail);
+
+              return (
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between rounded-lg border p-3"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage
+                        src={r.fromPhotoURL || ""}
+                        alt={displayName}
+                      />
+                      <AvatarFallback className="text-xs">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="font-medium">{displayName}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {r.type === "all"
+                          ? "Request all tasks"
+                          : "Request selected tasks"}
+                      </div>
                     </div>
                   </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleRespond(r.id, "accepted")}
+                      className="px-3 py-1 rounded-md bg-green-600 text-white hover:bg-green-700"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => handleRespond(r.id, "rejected")}
+                      className="px-3 py-1 rounded-md bg-rose-600 text-white hover:bg-rose-700"
+                    >
+                      Reject
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleRespond(r.id, "accepted")}
-                    className="px-3 py-1 rounded-md bg-green-600 text-white hover:bg-green-700"
-                  >
-                    Accept
-                  </button>
-                  <button
-                    onClick={() => handleRespond(r.id, "rejected")}
-                    className="px-3 py-1 rounded-md bg-rose-600 text-white hover:bg-rose-700"
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
           {!loading && !incoming.length && (
             <p className="text-sm text-muted-foreground">
               No incoming requests.

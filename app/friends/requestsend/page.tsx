@@ -24,12 +24,12 @@ export default function FriendRequestSendPage() {
         setSuggestions([]);
         return;
       }
-      
+
       setLoading(true);
       try {
         const results = await searchUsers(term);
         // Filter out current user from suggestions
-        const filtered = results.filter(u => u.uid !== user?.uid);
+        const filtered = results.filter((u) => u.uid !== user?.uid);
         setSuggestions(filtered);
       } catch (error) {
         console.error("Search error:", error);
@@ -44,7 +44,7 @@ export default function FriendRequestSendPage() {
 
   useEffect(() => {
     if (!user) return;
-    
+
     const loadSentRequests = async () => {
       try {
         const requests = await getOutgoingRequests(user.uid);
@@ -53,13 +53,13 @@ export default function FriendRequestSendPage() {
         console.error("Error loading sent requests:", error);
       }
     };
-    
+
     loadSentRequests();
   }, [user]);
 
   const handleRequest = async (targetUid: string, targetUser: any) => {
     if (!user) return;
-    
+
     try {
       await sendFriendRequest(user.uid, targetUid, "all");
       // Refresh the sent requests list
@@ -103,11 +103,11 @@ export default function FriendRequestSendPage() {
           placeholder="Search by name or email"
           className="w-full rounded-lg px-3 py-2 bg-background/60 border"
         />
-        
+
         {loading && (
           <p className="mt-2 text-sm text-muted-foreground">Searching...</p>
         )}
-        
+
         {!loading && !!suggestions.length && (
           <div className="mt-2 rounded-lg border divide-y">
             {suggestions.map((u) => {
@@ -142,7 +142,7 @@ export default function FriendRequestSendPage() {
             })}
           </div>
         )}
-        
+
         {!loading && term && !suggestions.length && (
           <p className="mt-2 text-sm text-muted-foreground">No users found</p>
         )}
@@ -154,7 +154,7 @@ export default function FriendRequestSendPage() {
           {sent.map((r: any) => {
             const displayName = getDisplayName(r);
             const initials = getInitials(displayName, r.toEmail);
-            
+
             return (
               <div
                 key={r.id}
@@ -173,23 +173,32 @@ export default function FriendRequestSendPage() {
                       {r.toEmail || "No email available"}
                     </div>
                     <div className="text-xs text-muted-foreground capitalize mt-1">
-                      Status: <span className={
-                        r.status === 'accepted' ? 'text-green-600' : 
-                        r.status === 'rejected' ? 'text-red-600' : 'text-yellow-600'
-                      }>
+                      Status:{" "}
+                      <span
+                        className={
+                          r.status === "accepted"
+                            ? "text-green-600"
+                            : r.status === "rejected"
+                              ? "text-red-600"
+                              : "text-yellow-600"
+                        }
+                      >
                         {r.status}
                       </span>
                     </div>
                   </div>
                 </div>
                 <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {r.createdAt?.toLocaleString?.() || new Date(r.createdAt).toLocaleString()}
+                  {r.createdAt?.toLocaleString?.() ||
+                    new Date(r.createdAt).toLocaleString()}
                 </span>
               </div>
             );
           })}
           {!sent.length && (
-            <p className="text-sm text-muted-foreground">No requests sent yet.</p>
+            <p className="text-sm text-muted-foreground">
+              No requests sent yet.
+            </p>
           )}
         </div>
       </div>

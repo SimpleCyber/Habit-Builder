@@ -604,24 +604,20 @@ export async function grantTaskAccess(
 }
 // </CHANGE>
 
-
-
-
-
 // Add these corrected functions to your firebase-db.ts file
 export async function sendFriendRequest(
   fromUid: string,
   toUid: string,
-  type: "all" | "specific" = "all"
+  type: "all" | "specific" = "all",
 ) {
   // Get sender's info
   const fromUserDoc = await getDoc(doc(db, "users", fromUid));
   const fromUserData = fromUserDoc.data();
-  
+
   // Get recipient's info
   const toUserDoc = await getDoc(doc(db, "users", toUid));
   const toUserData = toUserDoc.data();
-  
+
   await addDoc(collection(db, "friendRequests"), {
     fromUid,
     toUid,
@@ -635,91 +631,90 @@ export async function sendFriendRequest(
   });
 }
 
-
-
 export async function getReceivedRequests(myUid: string) {
   const q = query(
-    collection(db, "friendRequests"), 
+    collection(db, "friendRequests"),
     where("toUid", "==", myUid),
-    where("status", "==", "pending")
+    where("status", "==", "pending"),
   );
   const snapshot = await getDocs(q);
-  
-  return snapshot.docs.map(doc => ({
+
+  return snapshot.docs.map((doc) => ({
     id: doc.id,
-    ...doc.data()
+    ...doc.data(),
   }));
 }
 
 export async function getOutgoingRequests(myUid: string) {
   const q = query(
-    collection(db, "friendRequests"), 
-    where("fromUid", "==", myUid)
+    collection(db, "friendRequests"),
+    where("fromUid", "==", myUid),
   );
   const snapshot = await getDocs(q);
-  
-  return snapshot.docs.map(doc => ({
+
+  return snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
     // Convert Firestore timestamp to Date if needed
-    createdAt: doc.data().createdAt?.toDate?.() || new Date(doc.data().createdAt)
+    createdAt:
+      doc.data().createdAt?.toDate?.() || new Date(doc.data().createdAt),
   }));
 }
 
 export async function respondToRequest(
   requestId: string,
-  status: "accepted" | "rejected"
+  status: "accepted" | "rejected",
 ) {
-  await updateDoc(doc(db, "friendRequests", requestId), { 
+  await updateDoc(doc(db, "friendRequests", requestId), {
     status,
-    respondedAt: Timestamp.now()
+    respondedAt: Timestamp.now(),
   });
 }
 
 export async function searchUsers(term: string) {
   if (!term.trim()) return [];
-  
+
   const termLower = term.toLowerCase();
   const qEmail = query(
     collection(db, "users"),
     where("emailLower", ">=", termLower),
-    where("emailLower", "<=", termLower + "\uf8ff")
+    where("emailLower", "<=", termLower + "\uf8ff"),
   );
-  
+
   const qName = query(
     collection(db, "users"),
     where("nameLower", ">=", termLower),
-    where("nameLower", "<=", termLower + "\uf8ff")
+    where("nameLower", "<=", termLower + "\uf8ff"),
   );
-  
+
   const [emailSnapshot, nameSnapshot] = await Promise.all([
     getDocs(qEmail),
-    getDocs(qName)
+    getDocs(qName),
   ]);
 
   const usersMap = new Map();
-  
+
   // Process email results
-  emailSnapshot.forEach(doc => {
+  emailSnapshot.forEach((doc) => {
     const data = doc.data();
     usersMap.set(doc.id, {
       uid: doc.id,
       email: data.email,
       displayName: data.name || data.email,
       name: data.name,
-      photoURL: data.photoURL
+      photoURL: data.photoURL,
     });
   });
-  
+
   // Process name results
-  nameSnapshot.forEach(doc => {
+  nameSnapshot.forEach((doc) => {
     const data = doc.data();
     usersMap.set(doc.id, {
       uid: doc.id,
       email: data.email,
       displayName: data.name || data.email,
       name: data.name,
-      photoURL: data.photoURL
+      photoURL: data.photoURL,
     });
   });
 

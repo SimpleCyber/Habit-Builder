@@ -6,10 +6,12 @@ import {
   searchUsers,
   sendFriendRequest,
   getOutgoingRequests,
+  getMyFriends,
 } from "@/lib/firebase-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserPlus } from "lucide-react";
+import { toast } from "sonner";
 
 export default function FriendRequestSendPage() {
   const { user } = useAuth();
@@ -17,6 +19,7 @@ export default function FriendRequestSendPage() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [sent, setSent] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [friends, setFriends] = useState<any[]>([]);
 
   useEffect(() => {
     const search = async () => {
@@ -45,6 +48,15 @@ export default function FriendRequestSendPage() {
   useEffect(() => {
     if (!user) return;
 
+    const loadFriends = async () => {
+      try {
+        const list = await getMyFriends(user.uid);
+        setFriends(list);
+      } catch (error) {
+        console.error("Error loading friends:", error);
+      }
+    };
+
     const loadSentRequests = async () => {
       try {
         const requests = await getOutgoingRequests(user.uid);
@@ -53,18 +65,31 @@ export default function FriendRequestSendPage() {
         console.error("Error loading sent requests:", error);
       }
     };
-
+    loadFriends();
     loadSentRequests();
   }, [user]);
 
   const handleRequest = async (targetUid: string, targetUser: any) => {
+    console.log("handleRequest called for:", targetUid, targetUser);
     if (!user) return;
 
+    if (hasSentRequest(targetUid)) {
+      toast.warning("Friend request already sent!");
+      return;
+    }
+    if (isAlreadyFriend(targetUid)) {
+      toast.info("You are already friends!");
+      return;
+    }
+
     try {
-      await sendFriendRequest(user.uid, targetUid, "all");
+      const result = await sendFriendRequest(user.uid, targetUid, "all");
+      console.log("sendFriendRequest result:", result);
+      toast.success("Friend request sent!");
       // Refresh the sent requests list
       const updated = await getOutgoingRequests(user.uid);
       setSent(updated);
+
       // Clear search term and suggestions
       setTerm("");
       setSuggestions([]);
@@ -90,6 +115,14 @@ export default function FriendRequestSendPage() {
         .toUpperCase();
     }
     return email.slice(0, 2).toUpperCase();
+  };
+
+  const hasSentRequest = (uid: string) => {
+    return sent.some((r) => r.toUid === uid);
+  };
+
+  const isAlreadyFriend = (uid: string) => {
+    return friends.some((f) => f.uid === uid);
   };
 
   return (
@@ -131,12 +164,22 @@ export default function FriendRequestSendPage() {
                       </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleRequest(u.uid, u)}
-                    className="px-3 py-1 rounded-md bg-primary text-primary-foreground flex items-center gap-1 hover:bg-primary/90"
-                  >
-                    <UserPlus className="w-4 h-4" /> Request
-                  </button>
+                  {isAlreadyFriend(u.uid) ? (
+                    <span className="text-sm text-green-600 font-medium">
+                      Friend
+                    </span>
+                  ) : hasSentRequest(u.uid) ? (
+                    <span className="text-sm text-yellow-600 font-medium">
+                      Request Sent
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleRequest(u.uid, u)}
+                      className="px-3 py-1 rounded-md bg-primary text-primary-foreground flex items-center gap-1 hover:bg-primary/90"
+                    >
+                      <UserPlus className="w-4 h-4" /> Request
+                    </button>
+                  )}
                 </div>
               );
             })}

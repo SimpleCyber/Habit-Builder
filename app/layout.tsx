@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Suspense } from "react";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "HabitX",
@@ -25,6 +26,7 @@ export default function RootLayout({
           <AuthProvider>{children}</AuthProvider>
         </Suspense>
         <Analytics />
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );

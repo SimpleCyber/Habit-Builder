@@ -31,7 +31,7 @@ git clone https://github.com/SimpleCyber/Habit-Builder.git
 cd frontend/Habit-Builder
 
 # Install & Run
-npm install
+npm install --legacy-peer-deps
 npm run dev
 ```
 

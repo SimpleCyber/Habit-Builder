@@ -12,7 +12,7 @@ export const getTodayString = (): string => {
 
 export const calculateStreak = (
   lastCheckIn: string | null,
-  currentStreak: number
+  currentStreak: number,
 ): number => {
   const now = new Date();
 
@@ -46,7 +46,6 @@ export const calculateStreak = (
     return 0;
   }
 };
-
 
 export const getMonthDays = (year: number, month: number): Date[] => {
   const firstDay = new Date(year, month, 1);

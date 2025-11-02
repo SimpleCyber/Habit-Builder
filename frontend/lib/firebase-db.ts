@@ -161,7 +161,6 @@ export const deleteTask = async (userId: string, taskId: string) => {
   }
 };
 
-
 export async function ensureUserProfile(
   uid: string,
   email: string,
@@ -200,13 +199,10 @@ export async function findUserByEmail(email: string) {
   return { uid: docSnap.id, email: docSnap.data().email };
 }
 
-
-
 export async function getSentRequests() {
   // In real usage, pass the current user's uid; for now we'll return empty
   return [];
 }
-
 
 export async function getIncomingRequests(myUid: string) {
   const qReq = query(
@@ -263,7 +259,6 @@ export async function getMyFriends(myUid: string) {
   );
   return users;
 }
-
 
 export async function getViewableTasksByFriend(
   friendUid: string,

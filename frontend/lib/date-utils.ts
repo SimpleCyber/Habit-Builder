@@ -10,21 +10,31 @@ export const getTodayString = (): string => {
   return new Date().toISOString().split("T")[0];
 };
 
-export const calculateStreak = (lastCheckIn: string): number => {
-  if (!lastCheckIn) return 0;
-  const today = getTodayString();
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayString = yesterday.toISOString().split("T")[0];
+export const calculateStreak = (
+  lastCheckIn: string,
+  currentStreak: number
+): number => {
+  if (!lastCheckIn) return 1; // first check-in
 
-  if (lastCheckIn === today) {
-    return 1;
-  } else if (lastCheckIn === yesterdayString) {
-    return 1;
+  const today = new Date();
+  const lastDate = new Date(lastCheckIn);
+
+  // Remove time for consistency (compare only YYYY-MM-DD)
+  const diffInTime = today.setHours(0, 0, 0, 0) - lastDate.setHours(0, 0, 0, 0);
+  const diffInDays = diffInTime / (1000 * 60 * 60 * 24);
+
+  if (diffInDays === 0) {
+    // Already checked in today → streak remains
+    return currentStreak;
+  } else if (diffInDays === 1) {
+    // Consecutive day → increase streak
+    return currentStreak + 1;
   } else {
-    return 0;
+    // Missed a day → reset streak
+    return 1;
   }
 };
+
 
 export const getMonthDays = (year: number, month: number): Date[] => {
   const firstDay = new Date(year, month, 1);

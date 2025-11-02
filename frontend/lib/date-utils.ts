@@ -11,27 +11,39 @@ export const getTodayString = (): string => {
 };
 
 export const calculateStreak = (
-  lastCheckIn: string,
+  lastCheckIn: string | null,
   currentStreak: number
 ): number => {
-  if (!lastCheckIn) return 1; // first check-in
+  const now = new Date();
 
-  const today = new Date();
-  const lastDate = new Date(lastCheckIn);
+  // Convert current UTC time to IST
+  const istOffsetMs = 5.5 * 60 * 60 * 1000;
+  const nowIST = new Date(now.getTime() + istOffsetMs);
 
-  // Remove time for consistency (compare only YYYY-MM-DD)
-  const diffInTime = today.setHours(0, 0, 0, 0) - lastDate.setHours(0, 0, 0, 0);
+  // Normalize to YYYY-MM-DD string for IST day tracking
+  const todayISTString = nowIST.toISOString().split("T")[0];
+
+  // If no previous check-in, start streak
+  if (!lastCheckIn) return 1;
+
+  const lastCheckInDate = new Date(lastCheckIn);
+  const lastIST = new Date(lastCheckInDate.getTime() + istOffsetMs);
+
+  const lastISTString = lastIST.toISOString().split("T")[0];
+
+  // Calculate difference in IST days
+  const diffInTime = nowIST.setHours(0, 0, 0, 0) - lastIST.setHours(0, 0, 0, 0);
   const diffInDays = diffInTime / (1000 * 60 * 60 * 24);
 
   if (diffInDays === 0) {
-    // Already checked in today → streak remains
+    // Already updated today → streak stays same
     return currentStreak;
   } else if (diffInDays === 1) {
-    // Consecutive day → increase streak
+    // Updated yesterday → increase streak
     return currentStreak + 1;
   } else {
-    // Missed a day → reset streak
-    return 1;
+    // Missed one or more days → reset streak
+    return 0;
   }
 };
 

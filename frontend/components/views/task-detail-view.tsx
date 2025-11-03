@@ -11,6 +11,7 @@ import { HistoryList } from "@/components/history/history-list";
 import { useRouter } from "next/navigation";
 import { UserMenu } from "@/components/layout/user-menu";
 import { TaskCard } from "@/components/tasks/task-card";
+import { calculateCalendarStreak } from "@/lib/date-utils";
 
 import {
   Dialog,
@@ -62,53 +63,48 @@ export function TaskDetailView({
     (h) => new Date(h.date).toDateString() === today,
   );
 
-  const handleSaveUpdate = async () => {
-    if (!updateText.trim()) {
-      setFormError("Please add a description.");
-      return;
-    }
-    setFormError("");
-    const file = fileInputRef.current?.files?.[0];
-    let photoData: string | null = null;
+const handleSaveUpdate = async () => {
+  if (!updateText.trim()) {
+    setFormError("Please add a description.");
+    return;
+  }
+  setFormError("");
+  const file = fileInputRef.current?.files?.[0];
+  let photoData: string | null = null;
 
-    if (file) {
-      photoData = await compressImage(file);
-    }
+  if (file) {
+    photoData = await compressImage(file);
+  }
 
-    const todayDate = new Date();
-    const historyEntry = {
-      date: todayDate.toISOString(),
-      text: updateText,
-      photo: photoData,
-    };
+  const todayDate = new Date();
+  const todayISO = todayDate.toISOString();
 
-    // Calculate streak
-    let newStreak = task.streak;
-    if (task.lastUpdate) {
-      const lastDate = new Date(task.lastUpdate);
-      const diffTime = Math.abs(todayDate.getTime() - lastDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays === 1) {
-        newStreak++;
-      } else if (diffDays > 1) {
-        newStreak = 0;
-      }
-    } else {
-      newStreak = 1;
-    }
-
-    await onUpdate(task.id, {
-      history: [...task.history, historyEntry],
-      lastUpdate: todayDate.toISOString(),
-      streak: newStreak,
-    });
-
-    setUpdateText("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+  const historyEntry = {
+    date: todayISO,
+    text: updateText,
+    photo: photoData,
   };
+
+  // Add new entry to history
+  const updatedHistory = [...task.history, historyEntry];
+
+  // Sort history by date to ensure proper streak calculation
+  updatedHistory.sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
+
+  // Recalculate streak using updated history
+  const streak = calculateCalendarStreak(updatedHistory);
+
+  await onUpdate(task.id, {
+    history: updatedHistory,
+    lastUpdate: todayISO,
+    streak,
+  });
+
+  setUpdateText("");
+  if (fileInputRef.current) fileInputRef.current.value = "";
+};
 
   return (
     <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">

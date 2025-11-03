@@ -10,6 +10,55 @@ export const getTodayString = (): string => {
   return new Date().toISOString().split("T")[0];
 };
 
+
+export const calculateCalendarStreak = (
+  history: { date: string }[],
+): number => {
+  if (!history.length) return 0;
+
+  // Convert to IST and normalize to YYYY-MM-DD format
+  const istOffsetMs = 5.5 * 60 * 60 * 1000;
+  const days = history.map((h) => {
+    const d = new Date(h.date);
+    return new Date(d.getTime() + istOffsetMs)
+      .toISOString()
+      .split("T")[0];
+  });
+
+  // Deduplicate in case multiple entries exist for same day
+  const uniqueDays = Array.from(new Set(days)).sort();
+
+  // Calculate streak based on consecutive days
+  let streak = 1;
+  for (let i = uniqueDays.length - 1; i > 0; i--) {
+    const current = new Date(uniqueDays[i]);
+    const prev = new Date(uniqueDays[i - 1]);
+    const diff = (current.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
+
+    if (diff === 1) {
+      streak++;
+    } else if (diff > 1) {
+      break; // Streak broken
+    }
+  }
+
+  // If today's date isn’t in history, streak should remain until last update
+  const now = new Date();
+  const nowIST = new Date(now.getTime() + istOffsetMs)
+    .toISOString()
+    .split("T")[0];
+
+  if (uniqueDays[uniqueDays.length - 1] !== nowIST) {
+    // If user missed today, reset streak to 0
+    return 0;
+  }
+
+  return streak;
+};
+
+
+
+
 export const calculateStreak = (
   lastCheckIn: string | null,
   currentStreak: number,

@@ -3,6 +3,7 @@
 import { Flame } from "lucide-react";
 import type { Task } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
+import { calculateStreak } from "@/lib/date-utils";
 
 interface TaskCardProps {
   task: Task;

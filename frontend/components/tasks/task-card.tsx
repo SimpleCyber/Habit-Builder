@@ -3,24 +3,38 @@
 import { Flame } from "lucide-react";
 import type { Task } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
-import { calculateStreak } from "@/lib/date-utils";
 
 interface TaskCardProps {
   task: Task;
   onClick?: () => void;
   readOnly?: boolean;
-  // </CHANGE>
 }
 
 export function TaskCard({ task, onClick, readOnly }: TaskCardProps) {
-  const today = new Date().toDateString();
-  const checkedToday = task.history.some(
-    (h) => new Date(h.date).toDateString() === today,
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const isSameDay = (d1: Date, d2: Date) =>
+    d1.toDateString() === d2.toDateString();
+
+  // Check if task was updated today or yesterday
+  const checkedToday = task.history.some((h) =>
+    isSameDay(new Date(h.date), today),
   );
+
+  const checkedYesterday = task.history.some((h) =>
+    isSameDay(new Date(h.date), yesterday),
+  );
+
+  // If both missed → streak should show 0
+  const displayStreak = checkedToday || checkedYesterday ? task.streak : 0;
 
   return (
     <div
-      className={`task-card glass-effect rounded-2xl p-4 shadow-md hover:shadow-lg transition-all ${!readOnly ? "cursor-pointer" : ""}`}
+      className={`task-card glass-effect rounded-2xl p-4 shadow-md hover:shadow-lg transition-all ${
+        !readOnly ? "cursor-pointer" : ""
+      }`}
       onClick={readOnly ? undefined : onClick}
     >
       <div className="flex items-center justify-between">
@@ -41,10 +55,14 @@ export function TaskCard({ task, onClick, readOnly }: TaskCardProps) {
         <div className="flex items-center space-x-2">
           <div className="text-right flex items-center space-x-1">
             <span className="text-2xl font-bold text-orange-500 streak-flame">
-              {task.streak}
+              {displayStreak}
             </span>
             <Flame
-              className={`w-7 h-7 ${checkedToday ? "text-orange-500 fill-orange-500" : "text-gray-400"}`}
+              className={`w-7 h-7 ${
+                checkedToday
+                  ? "text-orange-500 fill-orange-500"
+                  : "text-gray-400"
+              }`}
             />
           </div>
         </div>

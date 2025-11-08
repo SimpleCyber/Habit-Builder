@@ -245,7 +245,7 @@ export function TaskDetailView({
             {alreadyChecked && (
               <div className="flex">
                 <div className="flex items-center justify-between w-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 p-3 rounded-lg font-semibold hover:cursor-pointer">
-                  <span>✓ Already Checked In Today</span>
+                  <span>✓ Already</span>
                 </div>
 
                 <button

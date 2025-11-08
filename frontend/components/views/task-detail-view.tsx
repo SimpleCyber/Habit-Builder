@@ -44,6 +44,7 @@ export function TaskDetailView({
   const router = useRouter();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [formError, setFormError] = useState("");
+  const [communityPosts, setCommunityPosts] = useState(false);
 
   const [visibility, setVisibility] = useState<"public" | "private">(
     task.visibility || "private",
@@ -83,6 +84,7 @@ export function TaskDetailView({
       date: todayISO,
       text: updateText,
       photo: photoData,
+      communityPosts,
     };
 
     // Add new entry to history
@@ -187,6 +189,22 @@ export function TaskDetailView({
                     capture="environment"
                     className="w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"
                   />
+                </div>
+
+                <div className="mb-4 flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="communityPosts"
+                    checked={communityPosts}
+                    onChange={(e) => setCommunityPosts(e.target.checked)}
+                    className="w-4 h-4"
+                  />
+                  <label
+                    htmlFor="communityPosts"
+                    className="text-sm text-gray-600 dark:text-gray-300"
+                  >
+                    Share this update to community
+                  </label>
                 </div>
 
                 <Button

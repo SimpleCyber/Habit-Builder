@@ -89,6 +89,7 @@ export default function CommunityPage() {
             : ("none" as const);
 
           for (const h of task.history) {
+            if (!h.communityPosts) continue;
             if (!h.text && !h.photo) continue;
             allPosts.push({
               uid: userId,

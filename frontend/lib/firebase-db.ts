@@ -33,6 +33,7 @@ export interface TaskHistoryEntry {
   date: string;
   text: string;
   photo: string | null;
+  communityPosts?: boolean;
 }
 
 export interface HistoryEntry {

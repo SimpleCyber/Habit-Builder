@@ -15,4 +15,5 @@ export interface HistoryEntry {
   date: string;
   text: string;
   photo: string | null;
+  communityPosts?: boolean;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { ArrowLeft, History, X, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, History, X, Eye, EyeOff, Share2 } from "lucide-react";
 import type { Task } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,6 +63,25 @@ export function TaskDetailView({
   const todayEntry = task.history.find(
     (h) => new Date(h.date).toDateString() === today,
   );
+
+  const toggleCommunityPost = async () => {
+    if (!todayEntry) return;
+
+    // Flip today's communityPosts flag
+    const updatedHistory = task.history.map((entry) =>
+      new Date(entry.date).toDateString() === new Date().toDateString()
+        ? { ...entry, communityPosts: !entry.communityPosts }
+        : entry,
+    );
+
+    // Update Firestore (or wherever onUpdate saves)
+    await onUpdate(task.id, { history: updatedHistory });
+
+    // Update local UI instantly
+    const newValue = !todayEntry.communityPosts;
+    todayEntry.communityPosts = newValue;
+    setCommunityPosts(newValue);
+  };
 
   const handleSaveUpdate = async () => {
     if (!updateText.trim()) {
@@ -126,6 +145,7 @@ export function TaskDetailView({
                 {alreadyChecked ? "Today's Update" : "Update Today"}
               </h3>
 
+              {/* make tasks Public or private */}
               <button
                 onClick={toggleVisibility}
                 className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
@@ -217,8 +237,31 @@ export function TaskDetailView({
             )}
 
             {alreadyChecked && (
-              <div className="w-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 p-3 rounded-lg font-semibold text-center">
-                ✓ Already Checked In Today
+              <div className="flex">
+                <div className="flex items-center justify-between w-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 p-3 rounded-lg font-semibold hover:cursor-pointer">
+                  <span>✓ Already Checked In Today</span>
+                </div>
+
+                <button
+                  onClick={toggleCommunityPost}
+                  className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/30 hover:bg-white/40 dark:bg-gray-800/50 dark:hover:bg-gray-800/70 transition-all hover:cursor-pointer"
+                >
+                  {todayEntry?.communityPosts ? (
+                    <>
+                      <Share2 className="w-4 h-4 text-green-600" />
+                      <span className="text-xs text-green-600 font-medium">
+                        Shared{" "}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="w-4 h-4 text-gray-500" />
+                      <span className="text-xs text-gray-500 font-medium">
+                        Private
+                      </span>
+                    </>
+                  )}
+                </button>
               </div>
             )}
           </div>

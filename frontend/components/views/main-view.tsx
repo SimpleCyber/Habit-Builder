@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Inbox } from "lucide-react";
+import { Plus, Inbox, NewspaperIcon } from "lucide-react";
 import type { Task } from "@/lib/types";
 import { TaskCard } from "@/components/tasks/task-card";
 import {
@@ -49,14 +49,11 @@ export function MainView({
             <h1 className="text-2xl font-bold">HabitX</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href="/friends"
-              aria-label="Friends"
-              title="Friends"
-              className="p-2 rounded-md hover:bg-muted transition"
-            >
-              <Users className="w-5 h-5" />
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link href="/community" className="flex items-center gap-2">
+                <NewspaperIcon className="w-5 h-5" />
+              </Link>
+            </div>
 
             <UserMenu />
           </div>

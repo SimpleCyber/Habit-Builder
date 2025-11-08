@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   UserSquare,
   Newspaper,
+  NewspaperIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -54,8 +55,14 @@ export function Header({ onPhotoClick }: HeaderProps) {
           >
             HabitX
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className="flex items-center gap-3">
+              <Link href="/community" className="flex items-center gap-2">
+                <NewspaperIcon className="w-5 h-5" />
+              </Link>
+            </div>
+
+            {/* <div className="flex items-center gap-3">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -96,7 +103,7 @@ export function Header({ onPhotoClick }: HeaderProps) {
               </DropdownMenu>
 
               {!pathname?.startsWith("/friends")}
-            </div>
+            </div> */}
 
             <UserMenu />
           </div>

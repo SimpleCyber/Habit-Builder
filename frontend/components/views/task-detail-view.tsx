@@ -146,7 +146,7 @@ export function TaskDetailView({
               </h3>
 
               {/* make tasks Public or private */}
-              <button
+              {/* <button
                 onClick={toggleVisibility}
                 className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                 title={
@@ -159,11 +159,17 @@ export function TaskDetailView({
                 }
               >
                 {visibility === "public" ? (
+                  <div className="flex justify-center align-middle gap-2">
                   <Eye className="w-5 h-5 text-green-600" />
+                  Task is visible
+                  </div>
                 ) : (
+                  <div className="flex justify-center align-middle gap-2">
                   <EyeOff className="w-5 h-5 text-gray-500" />
+                  Task Not Visible
+                  </div>
                 )}
-              </button>
+              </button> */}
             </div>
 
             {formError && (

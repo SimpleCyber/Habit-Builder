@@ -7,13 +7,20 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Link from "next/link";
+import {
+  UserPlus,
+  UserRoundCheck,
+  UserRoundSearch,
+  UserSquare,
+} from "lucide-react";
 
 function toggleTheme() {
   if (typeof document === "undefined") return;
   document.documentElement.classList.toggle("dark");
-  // Persist preference
   try {
     const isDark = document.documentElement.classList.contains("dark");
     localStorage.setItem("theme", isDark ? "dark" : "light");
@@ -57,18 +64,48 @@ export function UserMenu() {
           <AvatarFallback className="text-sm">{initials}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-48">
-        <div className="px-3 py-2 text-xs text-muted-foreground">
+
+      <DropdownMenuContent align="end" className="min-w-52">
+        {/* User Info */}
+        <div className="px-3 py-2 text-xs text-muted-foreground border-b border-muted">
           {user?.displayName || user?.email || "Account"}
         </div>
+
+        {/* Friends Section */}
+        <DropdownMenuItem asChild>
+          <Link href="/friends" className="flex items-center gap-2">
+            <UserSquare className="w-4 h-4" />
+            Your Friends
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link
+            href="/friends/requestrecive"
+            className="flex items-center gap-2"
+          >
+            <UserRoundCheck className="w-4 h-4" />
+            Requests Received
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/friends/requestsend" className="flex items-center gap-2">
+            <UserRoundSearch className="w-4 h-4" />
+            Search Friends
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        {/* Theme Toggle & Logout */}
         <DropdownMenuItem onClick={toggleTheme}>Toggle theme</DropdownMenuItem>
+
         <DropdownMenuItem
           className="text-destructive focus:text-destructive"
           onClick={async () => {
             try {
               await signOut(getAuth());
             } catch (e) {
-              console.log("signOut error:", (e as Error).message);
+              console.error("signOut error:", (e as Error).message);
             }
           }}
         >

@@ -63,51 +63,51 @@ export function TaskDetailView({
     (h) => new Date(h.date).toDateString() === today,
   );
 
-const handleSaveUpdate = async () => {
-  if (!updateText.trim()) {
-    setFormError("Please add a description.");
-    return;
-  }
-  setFormError("");
-  const file = fileInputRef.current?.files?.[0];
-  let photoData: string | null = null;
+  const handleSaveUpdate = async () => {
+    if (!updateText.trim()) {
+      setFormError("Please add a description.");
+      return;
+    }
+    setFormError("");
+    const file = fileInputRef.current?.files?.[0];
+    let photoData: string | null = null;
 
-  if (file) {
-    photoData = await compressImage(file);
-  }
+    if (file) {
+      photoData = await compressImage(file);
+    }
 
-  const todayDate = new Date();
-  const todayISO = todayDate.toISOString();
+    const todayDate = new Date();
+    const todayISO = todayDate.toISOString();
 
-  const historyEntry = {
-    date: todayISO,
-    text: updateText,
-    photo: photoData,
+    const historyEntry = {
+      date: todayISO,
+      text: updateText,
+      photo: photoData,
+    };
+
+    // Add new entry to history
+    const updatedHistory = [...task.history, historyEntry];
+
+    // Sort history by date to ensure proper streak calculation
+    updatedHistory.sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+
+    // Recalculate streak using updated history
+    const streak = calculateCalendarStreak(updatedHistory);
+
+    await onUpdate(task.id, {
+      history: updatedHistory,
+      lastUpdate: todayISO,
+      streak,
+    });
+
+    setUpdateText("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Add new entry to history
-  const updatedHistory = [...task.history, historyEntry];
-
-  // Sort history by date to ensure proper streak calculation
-  updatedHistory.sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-  );
-
-  // Recalculate streak using updated history
-  const streak = calculateCalendarStreak(updatedHistory);
-
-  await onUpdate(task.id, {
-    history: updatedHistory,
-    lastUpdate: todayISO,
-    streak,
-  });
-
-  setUpdateText("");
-  if (fileInputRef.current) fileInputRef.current.value = "";
-};
-
   return (
-    <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">
+    <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6 ">
       <Header />
 
       <div className="mb-5">

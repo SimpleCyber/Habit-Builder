@@ -10,7 +10,6 @@ export const getTodayString = (): string => {
   return new Date().toISOString().split("T")[0];
 };
 
-
 export const calculateCalendarStreak = (
   history: { date: string }[],
 ): number => {
@@ -20,9 +19,7 @@ export const calculateCalendarStreak = (
   const istOffsetMs = 5.5 * 60 * 60 * 1000;
   const days = history.map((h) => {
     const d = new Date(h.date);
-    return new Date(d.getTime() + istOffsetMs)
-      .toISOString()
-      .split("T")[0];
+    return new Date(d.getTime() + istOffsetMs).toISOString().split("T")[0];
   });
 
   // Deduplicate in case multiple entries exist for same day
@@ -55,9 +52,6 @@ export const calculateCalendarStreak = (
 
   return streak;
 };
-
-
-
 
 export const calculateStreak = (
   lastCheckIn: string | null,

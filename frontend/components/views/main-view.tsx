@@ -42,7 +42,7 @@ export function MainView({
   const [showMaxTasks, setShowMaxTasks] = useState(false);
 
   return (
-    <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">
+    <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6 ">
       <div className="glass-effect rounded-2xl shadow-xl p-4 mb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

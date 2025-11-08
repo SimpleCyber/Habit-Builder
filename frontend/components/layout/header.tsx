@@ -9,6 +9,7 @@ import {
   UserRoundSearch,
   ArrowLeft,
   UserSquare,
+  Newspaper,
 } from "lucide-react";
 import {
   DropdownMenu,

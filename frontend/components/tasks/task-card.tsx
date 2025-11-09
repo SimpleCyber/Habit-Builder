@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/icon";
 
 interface TaskCardProps {
   task: Task;
-  history: TaskHistoryEntry[]; // ✅ New prop
+  history: TaskHistoryEntry[];
   onClick?: () => void;
   readOnly?: boolean;
 }
@@ -19,14 +19,11 @@ export function TaskCard({ task, history, onClick, readOnly }: TaskCardProps) {
   const isSameDay = (d1: Date, d2: Date) =>
     d1.toDateString() === d2.toDateString();
 
-  // ✅ Check history from Firestore subcollection
   const checkedToday = history.some((h) => isSameDay(new Date(h.date), today));
-
   const checkedYesterday = history.some((h) =>
-    isSameDay(new Date(h.date), yesterday),
+    isSameDay(new Date(h.date), yesterday)
   );
 
-  // ✅ If user skipped 2 days, streak breaks
   const displayStreak = checkedToday || checkedYesterday ? task.streak : 0;
 
   return (
@@ -59,7 +56,9 @@ export function TaskCard({ task, history, onClick, readOnly }: TaskCardProps) {
           </span>
           <Flame
             className={`w-7 h-7 ${
-              checkedToday ? "text-orange-500 fill-orange-500" : "text-gray-400"
+              checkedToday
+                ? "text-orange-500 fill-orange-500"
+                : "text-gray-400"
             }`}
           />
         </div>

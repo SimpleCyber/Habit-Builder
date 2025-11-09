@@ -4,25 +4,18 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Header } from "@/components/layout/header";
 import {
+  getCommunityIndexPage,
+  getCommunityPostByReference,
   getMyFriends,
   getOutgoingRequests,
   sendFriendRequest,
 } from "@/lib/firebase-db";
 import { Loader, UserPlus, Clock, Flame } from "lucide-react";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  limit,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 import type { TaskHistoryEntry, Task } from "@/lib/types";
 
 // ---------------------------------------------------------
-// FINAL COMMUNITY PAGE WITH NEW FIRESTORE STRUCTURE
+// FINAL COMMUNITY PAGE USING communityIndex
 // ---------------------------------------------------------
 
 interface CommunityPost {
@@ -31,8 +24,8 @@ interface CommunityPost {
   email: string;
   photoURL: string | null;
 
-  task: Task; // no history inside
-  update: TaskHistoryEntry; // single history doc
+  task: Task;
+  update: TaskHistoryEntry;
 
   isFriend: boolean;
   requestStatus: "none" | "sent";
@@ -50,19 +43,20 @@ export default function CommunityPage() {
   const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
 
   const observerTarget = useRef<HTMLDivElement>(null);
-  const currentIndex = useRef(0);
-  const POSTS_PER_LOAD = 3;
+  const POSTS_PER_LOAD = 5;
 
-  // --------------------------
-  // ✅ Fetch all community posts
-  // --------------------------
+  const lastIndexDoc = useRef<any>(null);
+
+  // -----------------------------
+  // ✅ Fetch initial community posts
+  // -----------------------------
   const fetchCommunityData = useCallback(async () => {
     if (!user) return;
 
     try {
       setLoading(true);
 
-      // 1️⃣ Fetch friends + outgoing requests
+      // ✅ Load friends + outgoing requests
       const [friendsList, outgoing] = await Promise.all([
         getMyFriends(user.uid),
         getOutgoingRequests(user.uid),
@@ -70,74 +64,45 @@ export default function CommunityPage() {
 
       const friendUids = new Set(friendsList.map((f) => f.uid));
       const sentUids = new Set(
-        outgoing.filter((r) => r.status === "pending").map((r) => r.toUid),
+        outgoing.filter((r) => r.status === "pending").map((r) => r.toUid)
       );
 
       setFriends(friendUids);
       setSentRequests(sentUids);
 
-      // 2️⃣ Fetch all users
-      const usersSnap = await getDocs(collection(db, "users"));
-      const finalPosts: CommunityPost[] = [];
+      // ✅ Load first page from communityIndex
+      const { index, lastDoc } = await getCommunityIndexPage(POSTS_PER_LOAD);
+      lastIndexDoc.current = lastDoc;
 
-      for (const userDoc of usersSnap.docs) {
-        const userId = userDoc.id;
-        if (userId === user.uid) continue; // skip myself
+      const fullPosts: CommunityPost[] = [];
 
-        const userData = userDoc.data();
-        const tasksSnap = await getDocs(
-          collection(db, "users", userId, "tasks"),
+      for (const item of index) {
+        const post = await getCommunityPostByReference(
+          item.userId,
+          item.taskId,
+          item.historyId
         );
 
-        // 3️⃣ For each task, load only community-posted history entries
-        for (const taskDoc of tasksSnap.docs) {
-          const task = taskDoc.data() as Task;
+        if (!post) continue;
 
-          const historySnap = await getDocs(
-            query(
-              collection(db, "users", userId, "tasks", task.id, "history"),
-              orderBy("timestamp", "desc"),
-            ),
-          );
+        fullPosts.push({
+          uid: post.uid,
+          name: post.name,
+          email: post.email,
+          photoURL: post.photoURL,
 
-          for (const h of historySnap.docs) {
-            const hist = h.data() as TaskHistoryEntry;
+          task: post.task as Task,
+          update: post.update as TaskHistoryEntry,
 
-            // Ignore empty posts
-            if (!hist.text && !hist.photo) continue;
-            if (!hist.communityPosts) continue;
+          isFriend: friendUids.has(post.uid),
+          requestStatus: sentUids.has(post.uid) ? "sent" : "none",
 
-            finalPosts.push({
-              uid: userId,
-              name: userData.name || null,
-              email: userData.email || "",
-              photoURL: userData.photoURL || null,
-
-              task,
-              update: hist,
-
-              isFriend: friendUids.has(userId),
-              requestStatus: sentUids.has(userId) ? "sent" : "none",
-
-              createdAt: hist.date,
-            });
-          }
-        }
+          createdAt: post.createdAt,
+        });
       }
 
-      // Randomized + date-based sorting
-      const sorted = finalPosts
-        .map((p) => ({ ...p, _r: Math.random() * 0.2 }))
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() +
-            b._r -
-            (new Date(a.createdAt).getTime() + a._r),
-        );
-
-      setPosts(sorted);
-      currentIndex.current = 0;
-      setDisplayedPosts(sorted.slice(0, POSTS_PER_LOAD));
+      setPosts(fullPosts); // ✅ only first page, not everything
+      setDisplayedPosts(fullPosts);
     } catch (err) {
       console.error("Error loading community feed:", err);
     } finally {
@@ -145,38 +110,75 @@ export default function CommunityPage() {
     }
   }, [user]);
 
-  // ---------------------------------------------------------
-  // ✅ Load more posts on scroll
-  // ---------------------------------------------------------
-  const loadMore = useCallback(() => {
-    const nextIndex = currentIndex.current + POSTS_PER_LOAD;
+  // -----------------------------
+  // ✅ Load next page from firestore (real pagination)
+  // -----------------------------
+  const loadMore = useCallback(async () => {
+    if (!lastIndexDoc.current || loading) return;
 
-    if (nextIndex < posts.length) {
-      currentIndex.current = nextIndex;
-      setDisplayedPosts(posts.slice(0, nextIndex + POSTS_PER_LOAD));
+    try {
+      setLoading(true);
+
+      const { index, lastDoc } = await getCommunityIndexPage(
+        POSTS_PER_LOAD,
+        lastIndexDoc.current
+      );
+      lastIndexDoc.current = lastDoc;
+
+      const newPosts: CommunityPost[] = [];
+
+      for (const item of index) {
+        const post = await getCommunityPostByReference(
+          item.userId,
+          item.taskId,
+          item.historyId
+        );
+
+        if (!post) continue;
+
+        newPosts.push({
+          uid: post.uid,
+          name: post.name,
+          email: post.email,
+          photoURL: post.photoURL,
+
+          task: post.task as Task,
+          update: post.update as TaskHistoryEntry,
+
+          isFriend: friends.has(post.uid),
+          requestStatus: sentRequests.has(post.uid) ? "sent" : "none",
+
+          createdAt: post.createdAt,
+        });
+      }
+
+      // ✅ Append the new posts
+      setPosts((prev) => [...prev, ...newPosts]);
+      setDisplayedPosts((prev) => [...prev, ...newPosts]);
+    } catch (err) {
+      console.error("loadMore error:", err);
+    } finally {
+      setLoading(false);
     }
-  }, [posts]);
+  }, [friends, sentRequests, loading]);
 
-  // Infinite scroll observer
+  // ✅ Infinite scroll observer
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (
-          entries[0].isIntersecting &&
-          displayedPosts.length < posts.length &&
-          !loading
-        ) {
+        if (entries[0].isIntersecting && !loading) {
           loadMore();
         }
       },
-      { threshold: 0.2 },
+      { threshold: 0.2 }
     );
 
     if (observerTarget.current) observer.observe(observerTarget.current);
-    return () => observer.disconnect();
-  }, [displayedPosts.length, posts.length, loadMore, loading]);
 
-  // Initial load
+    return () => observer.disconnect();
+  }, [loadMore, loading]);
+
+  // ✅ initial fetch
   useEffect(() => {
     if (!authLoading && user) fetchCommunityData();
   }, [authLoading, user, fetchCommunityData]);
@@ -198,7 +200,7 @@ export default function CommunityPage() {
 
       const updated = await getOutgoingRequests(user.uid);
       const newSet = new Set(
-        updated.filter((r) => r.status === "pending").map((r) => r.toUid),
+        updated.filter((r) => r.status === "pending").map((r) => r.toUid)
       );
       setSentRequests(newSet);
     } catch {
@@ -207,7 +209,7 @@ export default function CommunityPage() {
   };
 
   // ---------------------------------------------------------
-  // ✅ Streak calculation (minimal history mode)
+  // ✅ Streak logic
   // ---------------------------------------------------------
   const getStreakInfo = (task: Task, updateDate: string) => {
     const today = new Date();
@@ -225,7 +227,7 @@ export default function CommunityPage() {
   };
 
   // ---------------------------------------------------------
-  // ✅ RENDER
+  // ✅ Render
   // ---------------------------------------------------------
 
   if (authLoading)
@@ -264,7 +266,7 @@ export default function CommunityPage() {
           {displayedPosts.map((post, i) => {
             const { checkedToday, displayStreak } = getStreakInfo(
               post.task,
-              post.update.date,
+              post.update.date
             );
 
             return (
@@ -356,7 +358,7 @@ export default function CommunityPage() {
         </div>
 
         {/* Infinite Loader */}
-        {displayedPosts.length < posts.length && (
+        {lastIndexDoc.current && (
           <div ref={observerTarget} className="py-12 text-center">
             <Loader className="w-6 h-6 animate-spin mx-auto" />
           </div>

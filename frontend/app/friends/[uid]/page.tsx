@@ -51,7 +51,7 @@ export default function FriendTasksPage() {
 
       <div className="grid md:grid-cols-1 lg:grid-cols-1 gap-4">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} readOnly />
+          <TaskCard task={task} history={task.history} />
         ))}
         {tasks.length === 0 && (
           <div className="text-sm text-muted-foreground col-span-full">

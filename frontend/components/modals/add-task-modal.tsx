@@ -9,7 +9,9 @@ import { Icon } from "@/components/ui/icon";
 
 interface AddTaskModalProps {
   onClose: () => void;
-  onAdd: (task: Omit<Task, "id" | "createdAt" | "iconBg">) => Promise<void>;
+  onAdd: (
+    task: Omit<Task, "id" | "createdAt" | "history" | "iconBg">,
+  ) => Promise<void>;
   maxTasks: boolean;
 }
 
@@ -41,15 +43,18 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
       setError("Maximum 5 tasks allowed.");
       return;
     }
+
     setError("");
+
     await onAdd({
       title,
       reason,
       icon: selectedIcon,
       streak: 0,
       lastUpdate: null,
-      history: [],
+      visibility: "private", // ✅ NEW default
     });
+
     onClose();
   };
 
@@ -64,7 +69,7 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Task Title"
           maxLength={30}
-          className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white mb-3"
+          className="w-full mb-3"
         />
 
         <Textarea
@@ -72,7 +77,7 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
           onChange={(e) => setReason(e.target.value)}
           placeholder="Why do you want to do this task?"
           maxLength={100}
-          className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white mb-3 h-24 resize-none"
+          className="w-full h-24 mb-3 resize-none"
         />
 
         <div className="mb-4">
@@ -84,8 +89,10 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
               <button
                 key={icon}
                 onClick={() => setSelectedIcon(icon)}
-                className={`icon-btn p-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:border-purple-500 transition-colors ${
-                  icon === selectedIcon ? "selected" : ""
+                className={`icon-btn p-3 rounded-lg border-2 ${
+                  icon === selectedIcon
+                    ? "border-purple-500"
+                    : "border-gray-300 dark:border-gray-600"
                 }`}
               >
                 <Icon name={icon} className="w-6 h-6" />
@@ -94,20 +101,19 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
           </div>
         </div>
 
-        <div className="mb-3">
-          {error && <p className="text-sm text-destructive">{error}</p>}
-        </div>
+        {error && <p className="text-sm text-destructive mb-3">{error}</p>}
 
         <div className="flex space-x-3">
           <Button
             onClick={handleSubmit}
-            className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white p-3 rounded-lg font-semibold hover:shadow-lg transition-shadow"
+            className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white"
           >
             Add Task
           </Button>
+
           <Button
             onClick={onClose}
-            className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white p-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600"
+            className="flex-1 bg-gray-200 dark:bg-gray-700"
           >
             Cancel
           </Button>

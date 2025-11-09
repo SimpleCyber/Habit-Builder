@@ -1,16 +1,17 @@
 "use client";
 
 import { Flame } from "lucide-react";
-import type { Task } from "@/lib/types";
+import type { Task, TaskHistoryEntry } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
 
 interface TaskCardProps {
   task: Task;
+  history: TaskHistoryEntry[]; // ✅ New prop
   onClick?: () => void;
   readOnly?: boolean;
 }
 
-export function TaskCard({ task, onClick, readOnly }: TaskCardProps) {
+export function TaskCard({ task, history, onClick, readOnly }: TaskCardProps) {
   const today = new Date();
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
@@ -18,16 +19,14 @@ export function TaskCard({ task, onClick, readOnly }: TaskCardProps) {
   const isSameDay = (d1: Date, d2: Date) =>
     d1.toDateString() === d2.toDateString();
 
-  // Check if task was updated today or yesterday
-  const checkedToday = task.history.some((h) =>
-    isSameDay(new Date(h.date), today),
-  );
+  // ✅ Check history from Firestore subcollection
+  const checkedToday = history.some((h) => isSameDay(new Date(h.date), today));
 
-  const checkedYesterday = task.history.some((h) =>
+  const checkedYesterday = history.some((h) =>
     isSameDay(new Date(h.date), yesterday),
   );
 
-  // If both missed → streak should show 0
+  // ✅ If user skipped 2 days, streak breaks
   const displayStreak = checkedToday || checkedYesterday ? task.streak : 0;
 
   return (
@@ -40,11 +39,12 @@ export function TaskCard({ task, onClick, readOnly }: TaskCardProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 aspect-square"
+            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ backgroundColor: task.iconBg || "hsl(220 75% 88%)" }}
           >
             <Icon name={task.icon} className="w-6 h-6 text-gray-800" />
           </div>
+
           <div>
             <h3 className="font-bold text-foreground text-base sm:text-lg">
               {task.title}
@@ -52,19 +52,16 @@ export function TaskCard({ task, onClick, readOnly }: TaskCardProps) {
             <p className="text-sm text-muted-foreground">{task.reason}</p>
           </div>
         </div>
+
         <div className="flex items-center space-x-2">
-          <div className="text-right flex items-center space-x-1">
-            <span className="text-2xl font-bold text-orange-500 streak-flame">
-              {displayStreak}
-            </span>
-            <Flame
-              className={`w-7 h-7 ${
-                checkedToday
-                  ? "text-orange-500 fill-orange-500"
-                  : "text-gray-400"
-              }`}
-            />
-          </div>
+          <span className="text-2xl font-bold text-orange-500">
+            {displayStreak}
+          </span>
+          <Flame
+            className={`w-7 h-7 ${
+              checkedToday ? "text-orange-500 fill-orange-500" : "text-gray-400"
+            }`}
+          />
         </div>
       </div>
     </div>

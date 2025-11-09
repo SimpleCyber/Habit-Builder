@@ -1,3 +1,5 @@
+// firebase-db.ts
+
 import {
   collection,
   doc,
@@ -12,155 +14,45 @@ import {
   limit,
   startAfter,
   Timestamp,
+  deleteDoc,
+  QueryDocumentSnapshot,
   type DocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
+
+/* =========================================================
+   ✅ INTERFACES
+========================================================= */
 
 export interface Task {
   id: string;
   title: string;
   reason: string;
   icon: string;
-  streak: number;
-  lastUpdate: string | null;
-  history: TaskHistoryEntry[];
-  createdAt: string;
   iconBg?: string;
   visibility?: "public" | "private";
+  streak: number;
+  lastUpdate: string | null;
+  createdAt: string;
 }
 
 export interface TaskHistoryEntry {
-  date: string;
-  text: string;
-  photo: string | null;
-  communityPosts?: boolean;
-}
-
-export interface HistoryEntry {
   id: string;
   date: string;
-  tasks: Task[];
-  photo?: string;
+  text: string;
+  photo: string | null; // ✅ BASE64
+  communityPosts?: boolean;
   timestamp: Date;
 }
 
 export interface UserData {
   streak: number;
   lastCheckIn: string;
-  tasks: Task[];
 }
 
-// Get user data
-export const getUserData = async (userId: string): Promise<UserData | null> => {
-  try {
-    const docRef = doc(db, "users", userId);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      return {
-        streak: data.streak || 0,
-        lastCheckIn: data.lastCheckIn || "",
-        tasks: data.tasks || [],
-      };
-    }
-    return null;
-  } catch (error) {
-    console.error("Error getting user data:", error);
-    return null;
-  }
-};
-
-// Save user data
-export const saveUserData = async (userId: string, data: Partial<UserData>) => {
-  try {
-    const docRef = doc(db, "users", userId);
-    await setDoc(docRef, data, { merge: true });
-    return { error: null };
-  } catch (error: any) {
-    console.error("Error saving user data:", error);
-    return { error: error.message };
-  }
-};
-
-// Get paginated history
-export const getPaginatedHistory = async (
-  userId: string,
-  pageSize = 10,
-  lastDoc?: DocumentSnapshot,
-) => {
-  try {
-    const historyRef = collection(db, "users", userId, "history");
-    let q = query(historyRef, orderBy("timestamp", "desc"), limit(pageSize));
-
-    if (lastDoc) {
-      q = query(
-        historyRef,
-        orderBy("timestamp", "desc"),
-        startAfter(lastDoc),
-        limit(pageSize),
-      );
-    }
-
-    const snapshot = await getDocs(q);
-    const history: HistoryEntry[] = [];
-
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      history.push({
-        id: doc.id,
-        date: data.date,
-        tasks: data.tasks || [],
-        photo: data.photo,
-        timestamp: data.timestamp?.toDate() || new Date(),
-      });
-    });
-
-    return {
-      history,
-      lastDoc: snapshot.docs[snapshot.docs.length - 1],
-      hasMore: snapshot.docs.length === pageSize,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("Error getting history:", error);
-    return { history: [], lastDoc: null, hasMore: false, error: error.message };
-  }
-};
-
-// Add history entry
-export const addHistoryEntry = async (
-  userId: string,
-  entry: Omit<HistoryEntry, "id" | "timestamp">,
-) => {
-  try {
-    const historyRef = collection(db, "users", userId, "history");
-    const docRef = doc(historyRef);
-    await setDoc(docRef, {
-      ...entry,
-      timestamp: Timestamp.now(),
-    });
-    return { error: null };
-  } catch (error: any) {
-    console.error("Error adding history:", error);
-    return { error: error.message };
-  }
-};
-
-// Delete task
-export const deleteTask = async (userId: string, taskId: string) => {
-  try {
-    const userData = await getUserData(userId);
-    if (userData) {
-      const updatedTasks = userData.tasks.filter((t) => t.id !== taskId);
-      await saveUserData(userId, { tasks: updatedTasks });
-    }
-    return { error: null };
-  } catch (error: any) {
-    console.error("Error deleting task:", error);
-    return { error: error.message };
-  }
-};
+/* =========================================================
+   ✅ USER PROFILE HELPERS
+========================================================= */
 
 export async function ensureUserProfile(
   uid: string,
@@ -170,27 +62,337 @@ export async function ensureUserProfile(
 ) {
   const ref = doc(db, "users", uid);
   const snap = await getDoc(ref);
+
   const base = {
     uid,
     email,
-    emailLower: (email || "").toLowerCase(),
+    emailLower: email.toLowerCase(),
     name: name || null,
-    nameLower: (name || "").toLowerCase() || null,
+    nameLower: (name || "").toLowerCase(),
     photoURL: photoURL || null,
   };
+
   if (!snap.exists()) {
     await setDoc(ref, { ...base, createdAt: Date.now() });
   } else {
     const data = snap.data() || {};
-    const next = {
-      ...data,
-      ...base,
-      createdAt: data.createdAt || Date.now(),
-    };
-    await setDoc(ref, next, { merge: true });
+    await setDoc(
+      ref,
+      { ...data, ...base, createdAt: data.createdAt || Date.now() },
+      { merge: true },
+    );
   }
 }
-// </CHANGE>
+
+export async function getUserData(uid: string): Promise<UserData | null> {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) return null;
+
+  const data = snap.data();
+  return {
+    streak: data.streak || 0,
+    lastCheckIn: data.lastCheckIn || "",
+  };
+}
+
+export async function saveUserData(uid: string, data: Partial<UserData>) {
+  await setDoc(doc(db, "users", uid), data, { merge: true });
+}
+
+/* =========================================================
+   ✅ TASK CRUD
+========================================================= */
+
+export async function createTask(
+  uid: string,
+  data: Omit<Task, "id" | "createdAt" | "streak" | "lastUpdate">,
+) {
+  const ref = doc(collection(db, "users", uid, "tasks"));
+  const id = ref.id;
+
+  await setDoc(ref, {
+    id,
+    ...data,
+    createdAt: new Date().toISOString(),
+    streak: 0,
+    lastUpdate: null,
+  });
+
+  return id;
+}
+
+export async function getTasks(uid: string): Promise<Task[]> {
+  const ref = collection(db, "users", uid, "tasks");
+  const q = query(ref, orderBy("createdAt", "asc")); // ✅ oldest → newest
+  const snap = await getDocs(q);
+
+  return snap.docs.map((d) => d.data() as Task);
+}
+
+export async function updateTask(
+  uid: string,
+  taskId: string,
+  updates: Partial<Task>,
+) {
+  await updateDoc(doc(db, "users", uid, "tasks", taskId), updates);
+}
+
+/* =========================================================
+   ✅ HISTORY CRUD
+========================================================= */
+
+export async function addHistoryEntry(
+  uid: string,
+  taskId: string,
+  entry: Omit<TaskHistoryEntry, "id" | "timestamp">,
+) {
+  const ref = collection(db, "users", uid, "tasks", taskId, "history");
+  const newDoc = await addDoc(ref, {
+    ...entry,
+    timestamp: Timestamp.now(),
+  });
+  return newDoc.id; // ✅ return ID for index usage
+}
+
+export async function getTaskHistory(
+  uid: string,
+  taskId: string,
+): Promise<TaskHistoryEntry[]> {
+  const ref = collection(db, "users", uid, "tasks", taskId, "history");
+  const snap = await getDocs(ref);
+
+  return snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      id: d.id,
+      date: data.date,
+      text: data.text,
+      photo: data.photo || null,
+      communityPosts: data.communityPosts || false,
+      timestamp: data.timestamp.toDate(),
+    } as TaskHistoryEntry;
+  });
+}
+
+/* =========================================================
+   ✅ DELETE TASK (with all history)
+========================================================= */
+
+export const deleteTask = async (userId: string, taskId: string) => {
+  try {
+    // Delete history docs
+    const historyRef = collection(
+      db,
+      "users",
+      userId,
+      "tasks",
+      taskId,
+      "history",
+    );
+    const historySnap = await getDocs(historyRef);
+
+    await Promise.all(
+      historySnap.docs.map((d) =>
+        deleteDoc(doc(db, "users", userId, "tasks", taskId, "history", d.id)),
+      ),
+    );
+
+    // Delete main task
+    await deleteDoc(doc(db, "users", userId, "tasks", taskId));
+
+    return { error: null };
+  } catch (error: any) {
+    console.error("Error deleting task:", error);
+    return { error: error.message };
+  }
+};
+
+/* =========================================================
+   ✅ PAGINATED HISTORY (Global)
+========================================================= */
+
+export const getPaginatedHistory = async (
+  userId: string,
+  pageSize = 10,
+  lastDoc?: DocumentSnapshot,
+) => {
+  try {
+    const ref = collection(db, "users", userId, "history");
+    let q = query(ref, orderBy("timestamp", "desc"), limit(pageSize));
+
+    if (lastDoc) {
+      q = query(
+        ref,
+        orderBy("timestamp", "desc"),
+        startAfter(lastDoc),
+        limit(pageSize),
+      );
+    }
+
+    const snap = await getDocs(q);
+
+    const history = snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        date: data.date,
+        tasks: data.tasks || [],
+        photo: data.photo,
+        timestamp: data.timestamp?.toDate() || new Date(),
+      };
+    });
+
+    return {
+      history,
+      lastDoc: snap.docs[snap.docs.length - 1],
+      hasMore: snap.docs.length === pageSize,
+      error: null,
+    };
+  } catch (error: any) {
+    console.error("Error getting paginated history:", error);
+    return { history: [], lastDoc: null, hasMore: false, error: error.message };
+  }
+};
+
+/* =========================================================
+   ✅ FRIEND REQUESTS + SHARING
+========================================================= */
+
+export async function sendFriendRequest(
+  fromUid: string,
+  toUid: string,
+  type: "all" | "specific" = "all",
+) {
+  const from = (await getDoc(doc(db, "users", fromUid))).data();
+  const to = (await getDoc(doc(db, "users", toUid))).data();
+
+  await addDoc(collection(db, "friendRequests"), {
+    fromUid,
+    toUid,
+    fromEmail: from?.email || "",
+    fromName: from?.name || "",
+    toEmail: to?.email || "",
+    toName: to?.name || "",
+    type,
+    status: "pending",
+    createdAt: Timestamp.now(),
+  });
+}
+
+export async function getReceivedRequests(myUid: string) {
+  const snap = await getDocs(
+    query(
+      collection(db, "friendRequests"),
+      where("toUid", "==", myUid),
+      where("status", "==", "pending"),
+    ),
+  );
+
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+interface FriendRequest {
+  id: string;
+  fromUid: string;
+  toUid: string;
+  status: "pending" | "accepted" | "rejected";
+  createdAt: Date;
+}
+
+export async function getOutgoingRequests(
+  myUid: string,
+): Promise<FriendRequest[]> {
+  const q = query(
+    collection(db, "friendRequests"),
+    where("fromUid", "==", myUid),
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+
+    return {
+      id: doc.id,
+      fromUid: data.fromUid,
+      toUid: data.toUid,
+      status: data.status,
+      createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
+    };
+  });
+}
+
+export async function respondToRequest(
+  id: string,
+  status: "accepted" | "rejected",
+) {
+  await updateDoc(doc(db, "friendRequests", id), {
+    status,
+    respondedAt: Timestamp.now(),
+  });
+}
+
+export async function grantTaskAccess(
+  ownerUid: string,
+  requestId: string,
+  taskIds: string[],
+) {
+  await updateDoc(doc(db, "friendRequests", requestId), {
+    status: "accepted",
+    grantedTaskIds: taskIds,
+  });
+}
+
+export async function searchUsers(term: string) {
+  if (!term.trim()) return [];
+
+  const termLower = term.toLowerCase();
+
+  const emailQ = query(
+    collection(db, "users"),
+    where("emailLower", ">=", termLower),
+    where("emailLower", "<=", termLower + "\uf8ff"),
+  );
+
+  const nameQ = query(
+    collection(db, "users"),
+    where("nameLower", ">=", termLower),
+    where("nameLower", "<=", termLower + "\uf8ff"),
+  );
+
+  const [emailSnap, nameSnap] = await Promise.all([
+    getDocs(emailQ),
+    getDocs(nameQ),
+  ]);
+
+  const users = new Map();
+
+  emailSnap.forEach((d) =>
+    users.set(d.id, {
+      uid: d.id,
+      email: d.data().email,
+      displayName: d.data().name || d.data().email,
+      name: d.data().name,
+      photoURL: d.data().photoURL,
+    }),
+  );
+
+  nameSnap.forEach((d) =>
+    users.set(d.id, {
+      uid: d.id,
+      email: d.data().email,
+      displayName: d.data().name || d.data().email,
+      name: d.data().name,
+      photoURL: d.data().photoURL,
+    }),
+  );
+
+  return [...users.values()];
+}
+
+// friends
 
 export async function findUserByEmail(email: string) {
   const q = query(collection(db, "users"), where("email", "==", email));
@@ -261,62 +463,6 @@ export async function getMyFriends(myUid: string) {
   return users;
 }
 
-export async function getViewableTasksByFriend(
-  friendUid: string,
-  viewerUid: string,
-) {
-  const [friendDoc, grantsSnap] = await Promise.all([
-    getDoc(doc(db, "users", friendUid)),
-    getDocs(
-      query(
-        collection(db, "users", friendUid, "grants"),
-        where("viewerUid", "==", viewerUid),
-      ),
-    ),
-  ]);
-  const tasks = (friendDoc.data()?.tasks || []) as any[];
-  const grantedIds = new Set<string>();
-  grantsSnap.forEach((g) =>
-    (g.data().taskIds || []).forEach((id: string) => grantedIds.add(id)),
-  );
-  return tasks.filter((t) => t.visibility === "public" || grantedIds.has(t.id));
-}
-
-// export async function searchUsers(term: string) {
-//   const q = term.toLowerCase();
-//   const qEmail = query(
-//     collection(db, "users"),
-//     where("emailLower", ">=", q),
-//     where("emailLower", "<=", q + "\uf8ff"),
-//   );
-//   const qName = query(
-//     collection(db, "users"),
-//     where("nameLower", ">=", q),
-//     where("nameLower", "<=", q + "\uf8ff"),
-//   );
-//   const [sEmail, sName] = await Promise.all([getDocs(qEmail), getDocs(qName)]);
-
-//   const dedup = new Map<string, any>();
-//   sEmail.forEach((d) => dedup.set(d.id, { uid: d.id, ...(d.data() as any) }));
-//   sName.forEach((d) => dedup.set(d.id, { uid: d.id, ...(d.data() as any) }));
-
-//   if (dedup.size === 0) {
-//     const eq = await getDocs(
-//       query(collection(db, "users"), where("email", "==", term)),
-//     );
-//     eq.forEach((d) => dedup.set(d.id, { uid: d.id, ...(d.data() as any) }));
-//   }
-
-//   return Array.from(dedup.values()).map((u: any) => ({
-//     uid: u.uid,
-//     email: u.email || "",
-//     name: u.name || null,
-//     photoURL: u.photoURL || null,
-//     displayName: u.name || u.email || "Unknown",
-//   }));
-// }
-// </CHANGE>
-
 export async function getUserProfile(uid: string) {
   const snap = await getDoc(doc(db, "users", uid));
   if (!snap.exists()) return null;
@@ -330,131 +476,180 @@ export async function getUserProfile(uid: string) {
   };
 }
 
-export async function grantTaskAccess(
-  ownerUid: string,
-  requestId: string,
-  taskIds: string[],
+export async function getViewableTasksByFriend(
+  friendUid: string,
+  viewerUid: string,
 ) {
-  await updateDoc(doc(db, "friendRequests", requestId), {
-    status: "accepted",
-    grantedTaskIds: taskIds,
-  });
+  const friendDoc = await getDoc(doc(db, "users", friendUid));
+
+  if (!friendDoc.exists()) return [];
+
+  const grantsSnap = await getDocs(
+    query(
+      collection(db, "users", friendUid, "grants"),
+      where("viewerUid", "==", viewerUid),
+    ),
+  );
+
+  const grantedIds = new Set<string>();
+  grantsSnap.forEach((g) =>
+    (g.data().taskIds || []).forEach((id: string) => grantedIds.add(id)),
+  );
+
+  const tasksSnap = await getDocs(collection(db, "users", friendUid, "tasks"));
+
+  const tasks = await Promise.all(
+    tasksSnap.docs
+      .filter((d) => {
+        const t = d.data();
+        return t.visibility === "public" || grantedIds.has(t.id);
+      })
+      .map(async (d) => {
+        const task = d.data() as any;
+
+        // 🔥 Get last 1 history entry
+        const lastHistorySnap = await getDocs(
+          query(
+            collection(db, "users", friendUid, "tasks", task.id, "history"),
+            orderBy("timestamp", "desc"),
+            limit(1),
+          ),
+        );
+
+        let lastUpdateDate: string | null = null;
+
+        if (!lastHistorySnap.empty) {
+          const h = lastHistorySnap.docs[0].data();
+          lastUpdateDate = h.date;
+        }
+
+        return {
+          ...task,
+          history: lastUpdateDate
+            ? [{ date: lastUpdateDate }] // ✅ minimal history for streak checks
+            : [],
+        };
+      }),
+  );
+
+  return tasks;
 }
-// </CHANGE>
 
-// Add these corrected functions to your firebase-db.ts file
-export async function sendFriendRequest(
-  fromUid: string,
-  toUid: string,
-  type: "all" | "specific" = "all",
+export async function updateHistoryEntry(
+  uid: string,
+  taskId: string,
+  historyId: string,
+  updates: Partial<TaskHistoryEntry>,
 ) {
-  // Get sender's info
-  const fromUserDoc = await getDoc(doc(db, "users", fromUid));
-  const fromUserData = fromUserDoc.data();
+  const ref = doc(db, "users", uid, "tasks", taskId, "history", historyId);
+  await updateDoc(ref, updates);
+}
 
-  // Get recipient's info
-  const toUserDoc = await getDoc(doc(db, "users", toUid));
-  const toUserData = toUserDoc.data();
+// =========================================================
+// ✅ COMMUNITY INDEX HELPERS (IDs only)
+// =========================================================
 
-  await addDoc(collection(db, "friendRequests"), {
-    fromUid,
-    toUid,
-    fromEmail: fromUserData?.email || "",
-    fromName: fromUserData?.name || "",
-    toEmail: toUserData?.email || "",
-    toName: toUserData?.name || "",
-    status: "pending",
-    type,
+/**
+ * Document shape in communityIndex:
+ * {
+ *   userId: string,
+ *   taskId: string,
+ *   historyId: string,
+ *   createdAt: Timestamp
+ * }
+ */
+
+export async function addToCommunityIndex(
+  userId: string,
+  taskId: string,
+  historyId: string,
+) {
+  await addDoc(collection(db, "communityIndex"), {
+    userId,
+    taskId,
+    historyId,
     createdAt: Timestamp.now(),
   });
 }
 
-export async function getReceivedRequests(myUid: string) {
-  const q = query(
-    collection(db, "friendRequests"),
-    where("toUid", "==", myUid),
-    where("status", "==", "pending"),
-  );
-  const snapshot = await getDocs(q);
-
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
-}
-
-export async function getOutgoingRequests(myUid: string) {
-  const q = query(
-    collection(db, "friendRequests"),
-    where("fromUid", "==", myUid),
-  );
-  const snapshot = await getDocs(q);
-
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-    // Convert Firestore timestamp to Date if needed
-    createdAt:
-      doc.data().createdAt?.toDate?.() || new Date(doc.data().createdAt),
-  }));
-}
-
-export async function respondToRequest(
-  requestId: string,
-  status: "accepted" | "rejected",
+export async function removeFromCommunityIndex(
+  userId: string,
+  taskId: string,
+  historyId: string,
 ) {
-  await updateDoc(doc(db, "friendRequests", requestId), {
-    status,
-    respondedAt: Timestamp.now(),
-  });
+  const qRef = query(
+    collection(db, "communityIndex"),
+    where("userId", "==", userId),
+    where("taskId", "==", taskId),
+    where("historyId", "==", historyId),
+  );
+
+  const snap = await getDocs(qRef);
+  await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
 }
 
-export async function searchUsers(term: string) {
-  if (!term.trim()) return [];
-
-  const termLower = term.toLowerCase();
-  const qEmail = query(
-    collection(db, "users"),
-    where("emailLower", ">=", termLower),
-    where("emailLower", "<=", termLower + "\uf8ff"),
+/**
+ * Paginated index fetch (IDs only)
+ */
+export async function getCommunityIndexPage(
+  pageSize = 10,
+  lastDoc?: QueryDocumentSnapshot,
+) {
+  let qRef = query(
+    collection(db, "communityIndex"),
+    orderBy("createdAt", "desc"),
+    limit(pageSize),
   );
 
-  const qName = query(
-    collection(db, "users"),
-    where("nameLower", ">=", termLower),
-    where("nameLower", "<=", termLower + "\uf8ff"),
-  );
+  if (lastDoc) {
+    qRef = query(
+      collection(db, "communityIndex"),
+      orderBy("createdAt", "desc"),
+      startAfter(lastDoc),
+      limit(pageSize),
+    );
+  }
 
-  const [emailSnapshot, nameSnapshot] = await Promise.all([
-    getDocs(qEmail),
-    getDocs(qName),
+  const snap = await getDocs(qRef);
+  const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as any);
+
+  return {
+    index: docs, // [{id, userId, taskId, historyId, createdAt}]
+    lastDoc: snap.docs[snap.docs.length - 1] || null,
+    hasMore: snap.docs.length === pageSize,
+  };
+}
+
+/**
+ * Given refs (userId, taskId, historyId), fetch full data.
+ * Returns null if anything is missing.
+ */
+export async function getCommunityPostByReference(
+  userId: string,
+  taskId: string,
+  historyId: string,
+) {
+  const [userSnap, taskSnap, histSnap] = await Promise.all([
+    getDoc(doc(db, "users", userId)),
+    getDoc(doc(db, "users", userId, "tasks", taskId)),
+    getDoc(doc(db, "users", userId, "tasks", taskId, "history", historyId)),
   ]);
 
-  const usersMap = new Map();
+  if (!userSnap.exists() || !taskSnap.exists() || !histSnap.exists()) {
+    return null;
+  }
 
-  // Process email results
-  emailSnapshot.forEach((doc) => {
-    const data = doc.data();
-    usersMap.set(doc.id, {
-      uid: doc.id,
-      email: data.email,
-      displayName: data.name || data.email,
-      name: data.name,
-      photoURL: data.photoURL,
-    });
-  });
+  const user = userSnap.data();
+  const task = taskSnap.data();
+  const update = histSnap.data();
 
-  // Process name results
-  nameSnapshot.forEach((doc) => {
-    const data = doc.data();
-    usersMap.set(doc.id, {
-      uid: doc.id,
-      email: data.email,
-      displayName: data.name || data.email,
-      name: data.name,
-      photoURL: data.photoURL,
-    });
-  });
-
-  return Array.from(usersMap.values());
+  return {
+    uid: userId,
+    name: user?.name || null,
+    email: user?.email || "",
+    photoURL: user?.photoURL || null,
+    task,
+    update,
+    createdAt: update?.date || "", // ISO string from your history entry
+  };
 }

@@ -1,3 +1,5 @@
+// types.ts
+
 export interface Task {
   id: string;
   title: string;
@@ -6,14 +8,20 @@ export interface Task {
   iconBg?: string;
   streak: number;
   lastUpdate: string | null;
-  history: HistoryEntry[];
   createdAt: string;
   visibility?: "public" | "private";
 }
 
-export interface HistoryEntry {
-  date: string;
+export interface TaskHistoryEntry {
+  id: string;
+  date: string; // ISO string
   text: string;
-  photo: string | null;
+  photo: string | null; // BASE64 ✅
   communityPosts?: boolean;
+  timestamp: Date;
+}
+
+export interface UserData {
+  streak: number;
+  lastCheckIn: string;
 }

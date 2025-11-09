@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Inbox, NewspaperIcon } from "lucide-react";
-import type { Task } from "@/lib/types";
+import type { Task, TaskHistoryEntry } from "@/lib/types";
 import { TaskCard } from "@/components/tasks/task-card";
 import {
   Dialog,
@@ -12,12 +12,11 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { UserMenu } from "@/components/layout/user-menu";
-
 import Link from "next/link";
-import { Users } from "lucide-react";
 
 interface MainViewProps {
   tasks: Task[];
+  histories: Record<string, TaskHistoryEntry[]>;
   onOpenTask: (taskId: string) => void;
   onOpenAddModal: () => void;
   darkMode: boolean;
@@ -26,11 +25,12 @@ interface MainViewProps {
 
 export function MainView({
   tasks,
+  histories,
   onOpenTask,
   onOpenAddModal,
-  darkMode,
-  onToggleDarkMode,
 }: MainViewProps) {
+  const [showMaxTasks, setShowMaxTasks] = useState(false);
+
   const handleAddClick = () => {
     if (tasks.length >= 5) {
       setShowMaxTasks(true);
@@ -39,27 +39,22 @@ export function MainView({
     onOpenAddModal();
   };
 
-  const [showMaxTasks, setShowMaxTasks] = useState(false);
-
   return (
-    <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6 ">
+    <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">
+      {/* Header */}
       <div className="glass-effect rounded-2xl shadow-xl p-4 mb-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">HabitX</h1>
-          </div>
+          <h1 className="text-2xl font-bold">HabitX</h1>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-3">
-              <Link href="/community" className="flex items-center gap-2">
-                <NewspaperIcon className="w-5 h-5" />
-              </Link>
-            </div>
-
+            <Link href="/community">
+              <NewspaperIcon className="w-5 h-5" />
+            </Link>
             <UserMenu />
           </div>
         </div>
       </div>
 
+      {/* Task List */}
       <div className="space-y-4 mb-6">
         {tasks.length === 0 ? (
           <div className="glass-effect rounded-2xl p-8 text-center">
@@ -76,20 +71,22 @@ export function MainView({
             <TaskCard
               key={task.id}
               task={task}
+              history={histories[task.id] || []} // ✅ pass history per card
               onClick={() => onOpenTask(task.id)}
             />
           ))
         )}
       </div>
 
+      {/* Add Button */}
       <button
         onClick={handleAddClick}
-        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-xl hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        aria-label="Add task"
+        className="fixed bottom-6 right-6 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-xl hover:shadow-2xl"
       >
         <Plus className="w-6 h-6" />
       </button>
 
+      {/* Limit Dialog */}
       <Dialog open={showMaxTasks} onOpenChange={setShowMaxTasks}>
         <DialogContent>
           <DialogHeader>

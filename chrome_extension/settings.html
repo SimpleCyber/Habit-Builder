@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HabitX Settings</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 28px 40px; 
+      background: #f4f6ff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #1a1a1a;
+      
+    }
+
+    .hx-wrap { width: 100%; max-width: 780px; margin-left: 0; }
+
+    
+
+    h1 {
+      font-size: 30px;
+      font-weight: 700;
+      margin-bottom: 32px;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2 {
+      font-size: 19px;
+      font-weight: 600;
+      margin: 32px 0 10px;
+    }
+
+    .hx-progress-row {
+      display: flex;
+      justify-content: space-between;
+      width: 280px;
+      padding: 14px 16px;
+      font-size: 15px;
+      border-radius: 10px;
+      background: #eef1ff;
+      border: 1px solid #d7dcff;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    .hx-input {
+      width: 360px;
+      padding: 12px 14px;
+      border: 1px solid #cdd2d7;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 12px;
+      background: white;
+    }
+
+    .hx-input:focus {
+      border-color: #4f46e5;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+    }
+
+    .hx-btn-primary {
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .hx-btn-primary:hover {
+      background: #4338ca;
+    }
+
+    .hx-list {
+      list-style: none;
+      padding: 0;
+      margin-top: 18px;
+      max-width: 420px;
+    }
+
+    .hx-list-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: #ffffff;
+      border: 1px solid #e0e3eb;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .hx-btn-danger {
+      padding: 5px 12px;
+      background: #ef4444;
+      color: white;
+      font-size: 12px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .hx-btn-danger:hover {
+      background: #dc2626;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="hx-wrap">
+    <div>
+
+      <h1><i class="fa-solid fa-gear"></i> HabitX Settings</h1>
+
+      <div class="hx-progress-row">
+        <span>Today's Progress</span>
+        <span><span id="completed">0</span> / <span id="total">0</span></span>
+      </div>
+
+      <div style="margin-bottom: 24px; text-align: left;">
+        <h2>Required Tasks</h2>
+        <input id="required-input" type="number" class="hx-input" placeholder="Number of tasks needed (e.g., 3)">
+        <br>
+        <button id="save-required" class="hx-btn-primary">Save Required Tasks</button>
+      </div>
+
+      <div style="text-align: left;">
+        <h2>Allowed Websites</h2>
+        <input id="url-input" type="text" class="hx-input" placeholder="example.com">
+
+        <br>
+        <button id="add-url" class="hx-btn-primary" style="background: linear-gradient(135deg, #22c55e, #16a34a); color: white;">
+          <i class="fa-solid fa-plus"></i> Add Allowed URL
+        </button>
+
+        <ul id="allowed-list" class="hx-list"></ul>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

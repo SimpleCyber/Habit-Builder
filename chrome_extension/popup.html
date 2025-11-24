@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f6ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 320px;
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .title {
+            font-size: 22px;
+            margin-bottom: 15px;
+            color: #2a2a2a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-box {
+            background: #eef1ff;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            font-size: 16px;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .btn {
+            width: 100%;
+            background: #4c6ef5;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: #3b5bdb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="title">
+            <i class="fa-solid fa-shield-halved"></i>
+            HabitX Status
+        </h1>
+
+        <!-- Progress -->
+        <div class="progress-box">
+            <span>Today's Progress</span>
+            <strong>
+                <span id="s-completed">0</span> / <span id="s-total">0</span>
+            </strong>
+        </div>
+
+        <!-- Settings button -->
+        <button id="open-settings" class="btn">
+            <i class="fa-solid fa-gear"></i> Open Settings
+        </button>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

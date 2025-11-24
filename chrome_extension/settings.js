@@ -1,6 +1,6 @@
 // Load initial data
-chrome.storage.local.get(["requiredTasks", "allowedUrls", "completed", "total"],
-    ({ requiredTasks, allowedUrls, completed, total }) => {
+chrome.storage.local.get(["requiredTasks", "allowedUrls", "completed", "total", "settingsLockedUntil"],
+    ({ requiredTasks, allowedUrls, completed, total, settingsLockedUntil }) => {
 
         document.getElementById("completed").innerText = completed || 0;
         document.getElementById("total").innerText = total || 0;
@@ -8,6 +8,7 @@ chrome.storage.local.get(["requiredTasks", "allowedUrls", "completed", "total"],
         document.getElementById("required-input").value = requiredTasks || "";
 
         renderAllowedList(allowedUrls || []);
+        checkLockStatus(settingsLockedUntil);
     }
 );
 
@@ -21,10 +22,41 @@ document.getElementById("save-required").addEventListener("click", () => {
         return;
     }
 
-    chrome.storage.local.set({ requiredTasks: value }, () => {
-        alert("Required tasks saved!");
+    const lockTime = Date.now() + (24 * 60 * 60 * 1000); // 24 hours from now
+
+    chrome.storage.local.set({ 
+        requiredTasks: value,
+        settingsLockedUntil: lockTime
+    }, () => {
+        alert("Required tasks saved! Settings are now locked for 24 hours.");
+        checkLockStatus(lockTime);
     });
 });
+
+function checkLockStatus(lockedUntil) {
+    const input = document.getElementById("required-input");
+    const btn = document.getElementById("save-required");
+    const msg = document.getElementById("lock-msg");
+
+    if (lockedUntil && Date.now() < lockedUntil) {
+        // Locked
+        input.disabled = true;
+        btn.disabled = true;
+        btn.style.opacity = "0.6";
+        btn.style.cursor = "not-allowed";
+        
+        const remainingHours = Math.ceil((lockedUntil - Date.now()) / (1000 * 60 * 60));
+        msg.innerText = `🔒 Settings locked. You can change this again in ~${remainingHours} hours.`;
+        msg.style.display = "block";
+    } else {
+        // Unlocked
+        input.disabled = false;
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.style.cursor = "pointer";
+        msg.style.display = "none";
+    }
+}
 
 
 // Add new URL

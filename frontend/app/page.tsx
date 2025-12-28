@@ -38,7 +38,12 @@ export default function LandingPage() {
       {/* Sticky Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0A0A0A]/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-            <div className="font-bold text-xl tracking-tighter">HabitX</div>
+            <Link href="/" className="text-xl font-bold tracking-tighter flex items-center gap-2">
+            <div className="w-8 h-8 rounded bg-green-500 flex items-center justify-center">
+                <span className="text-black font-bold text-lg">H</span>
+            </div>
+            HabitX
+        </Link>
             <div className="flex items-center gap-4">
                 <Link href="/auth" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
                     Login

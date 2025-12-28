@@ -16,7 +16,9 @@ import {
   UserRoundCheck,
   UserRoundSearch,
   UserSquare,
+  UserCircle,
 } from "lucide-react";
+import { getUserData } from "@/lib/firebase-db";
 
 function toggleTheme() {
   if (typeof document === "undefined") return;
@@ -29,10 +31,18 @@ function toggleTheme() {
 
 export function UserMenu() {
   const [user, setUser] = React.useState<User | null>(null);
+  const [username, setUsername] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const auth = getAuth();
-    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (u) {
+        getUserData(u.uid).then((data) => {
+          if (data?.username) setUsername(data.username);
+        });
+      }
+    });
     return () => unsub();
   }, []);
 
@@ -93,6 +103,15 @@ export function UserMenu() {
             Search Friends
           </Link>
         </DropdownMenuItem>
+
+        {username && (
+          <DropdownMenuItem asChild>
+            <Link href={`/${username}`} className="flex items-center gap-2 font-bold text-orange-500">
+              <UserCircle className="w-4 h-4" />
+              Profile
+            </Link>
+          </DropdownMenuItem>
+        )}
 
         <DropdownMenuSeparator />
 

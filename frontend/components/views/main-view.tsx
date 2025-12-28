@@ -44,7 +44,7 @@ export function MainView({
       {/* Header */}
       <div className="glass-effect rounded-2xl shadow-xl p-4 mb-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">HabitX</h1>
+          <h1 className="text-2xl font-bold tracking-tight">HabitX</h1>
           <div className="flex items-center gap-2">
             <Link href="/community">
               <NewspaperIcon className="w-5 h-5" />

@@ -24,4 +24,8 @@ export interface TaskHistoryEntry {
 export interface UserData {
   streak: number;
   lastCheckIn: string;
+  username?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  socialLinks?: Record<string, string>;
 }

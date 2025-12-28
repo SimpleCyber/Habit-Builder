@@ -48,6 +48,11 @@ export interface TaskHistoryEntry {
 export interface UserData {
   streak: number;
   lastCheckIn: string;
+  name?: string | null;
+  username?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  socialLinks?: Record<string, string>;
 }
 
 /* =========================================================
@@ -70,6 +75,7 @@ export async function ensureUserProfile(
     name: name || null,
     nameLower: (name || "").toLowerCase(),
     photoURL: photoURL || null,
+    // We don't overwrite username or socialLinks here
   };
 
   if (!snap.exists()) {
@@ -94,6 +100,7 @@ export async function getUserData(uid: string): Promise<UserData | null> {
   return {
     streak: data.streak || 0,
     lastCheckIn: data.lastCheckIn || "",
+    username: data.username || null,
   };
 }
 
@@ -473,6 +480,10 @@ export async function getUserProfile(uid: string) {
     name: d.name || null,
     photoURL: d.photoURL || null,
     displayName: d.name || d.email,
+    username: d.username || null,
+    bio: d.bio || null,
+    location: d.location || null,
+    socialLinks: d.socialLinks || {},
   };
 }
 
@@ -652,4 +663,51 @@ export async function getCommunityPostByReference(
     update,
     createdAt: update?.date || "", // ISO string from your history entry
   };
+}
+
+/* =========================================================
+   ✅ USERNAME SYSTEM
+   ========================================================= */
+
+export async function checkUsernameAvailable(username: string): Promise<boolean> {
+  const cleanUsername = username.toLowerCase().trim();
+  if (cleanUsername.length < 3) return false;
+
+  const ref = doc(db, "usernames", cleanUsername);
+  const snap = await getDoc(ref);
+  return !snap.exists();
+}
+
+export async function claimUsername(uid: string, username: string) {
+  const cleanUsername = username.toLowerCase().trim();
+  
+  // 1. Check availability again (safety)
+  const usernameRef = doc(db, "usernames", cleanUsername);
+  const userRef = doc(db, "users", uid);
+
+  // We should ideally use a transaction here, but for simplicity in this MVP:
+  const snap = await getDoc(usernameRef);
+  if (snap.exists()) {
+    throw new Error("Username already taken");
+  }
+
+  // 2. Reserve username
+  await setDoc(usernameRef, { uid });
+
+  // 3. Update user profile
+  await updateDoc(userRef, { 
+    username: username, // Display version
+    usernameLower: cleanUsername // Search/Index version
+  });
+}
+
+export async function getUserByUsername(username: string) {
+  const cleanUsername = username.toLowerCase().trim();
+  const usernameRef = doc(db, "usernames", cleanUsername);
+  const usernameSnap = await getDoc(usernameRef);
+
+  if (!usernameSnap.exists()) return null;
+
+  const { uid } = usernameSnap.data() as { uid: string };
+  return getUserProfile(uid);
 }

@@ -45,14 +45,27 @@ export default function LandingPage() {
             HabitX
         </Link>
             <div className="flex items-center gap-4">
-                <Link href="/auth" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
-                    Login
-                </Link>
-                <Link href="/auth">
-                    <Button size="sm" className="bg-white text-black hover:bg-gray-200 rounded-full font-bold">
-                        Join Now
-                    </Button>
-                </Link>
+                {user ? (
+                   <>
+                     <Link href="/home" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
+                        Dashboard
+                     </Link>
+                     <Link href="/profile" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
+                        Profile
+                     </Link>
+                   </>
+                ) : (
+                   <>
+                    <Link href="/auth" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
+                        Login
+                    </Link>
+                    <Link href="/auth">
+                        <Button size="sm" className="bg-white text-black hover:bg-gray-200 rounded-full font-bold">
+                            Join Now
+                        </Button>
+                    </Link>
+                   </>
+                )}
             </div>
         </div>
       </nav>

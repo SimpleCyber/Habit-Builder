@@ -33,8 +33,10 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
   const [reason, setReason] = useState("");
   const [selectedIcon, setSelectedIcon] = useState("target");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
+    if (isSubmitting) return; // Prevention
     if (!title.trim() || !reason.trim()) {
       setError("Please fill in all fields.");
       return;
@@ -45,17 +47,24 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
     }
 
     setError("");
+    setIsSubmitting(true);
 
-    await onAdd({
-      title,
-      reason,
-      icon: selectedIcon,
-      streak: 0,
-      lastUpdate: null,
-      visibility: "private", // ✅ NEW default
-    });
-
-    onClose();
+    try {
+      await onAdd({
+        title,
+        reason,
+        icon: selectedIcon,
+        streak: 0,
+        lastUpdate: null,
+        visibility: "private",
+      });
+      onClose();
+    } catch (e) {
+      console.error(e);
+      setError("Failed to add task.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -70,6 +79,7 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
           placeholder="Task Title"
           maxLength={30}
           className="w-full mb-3"
+          disabled={isSubmitting}
         />
 
         <Textarea
@@ -78,6 +88,7 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
           placeholder="Why do you want to do this task?"
           maxLength={100}
           className="w-full h-24 mb-3 resize-none"
+          disabled={isSubmitting}
         />
 
         <div className="mb-4">
@@ -89,11 +100,12 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
               <button
                 key={icon}
                 onClick={() => setSelectedIcon(icon)}
+                disabled={isSubmitting}
                 className={`icon-btn p-3 rounded-lg border-2 ${
                   icon === selectedIcon
                     ? "border-purple-500"
                     : "border-gray-300 dark:border-gray-600"
-                }`}
+                } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <Icon name={icon} className="w-6 h-6" />
               </button>
@@ -106,9 +118,10 @@ export function AddTaskModal({ onClose, onAdd, maxTasks }: AddTaskModalProps) {
         <div className="flex space-x-3">
           <Button
             onClick={handleSubmit}
+            disabled={isSubmitting}
             className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white"
           >
-            Add Task
+            {isSubmitting ? "Adding..." : "Add Task"}
           </Button>
 
           <Button

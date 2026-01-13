@@ -54,6 +54,7 @@ export function TaskDetailView({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formError, setFormError] = useState("");
   const [communityPosts, setCommunityPosts] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ Prevention
 
   const [localHistory, setLocalHistory] = useState(history);
 
@@ -97,64 +98,74 @@ export function TaskDetailView({
      ✅ Handle Today's Update Save
   --------------------------------------------------------- */
   const handleSaveUpdate = async () => {
+    if (isSubmitting) return; // Prevention
+
     if (!updateText.trim()) {
       setFormError("Please add a description.");
       return;
     }
     setFormError("");
+    setIsSubmitting(true);
 
-    let photoData: string | null = null;
-    const file = fileInputRef.current?.files?.[0];
-    if (file) photoData = await compressImage(file);
+    try {
+      let photoData: string | null = null;
+      const file = fileInputRef.current?.files?.[0];
+      if (file) photoData = await compressImage(file);
 
-    const todayISO = new Date().toISOString();
+      const todayISO = new Date().toISOString();
 
-    const newHistoryEntry = {
-      date: todayISO,
-      text: updateText,
-      photo: photoData,
-      communityPosts,
-    };
+      const newHistoryEntry = {
+        date: todayISO,
+        text: updateText,
+        photo: photoData,
+        communityPosts,
+      };
 
-    // ✅ Add history entry & get docId
-    const newHistoryId = await addHistoryEntry(uid, task.id, newHistoryEntry);
+      // ✅ Add history entry & get docId
+      const newHistoryId = await addHistoryEntry(uid, task.id, newHistoryEntry);
 
-    // ✅ If shared, add to communityIndex
-    if (communityPosts) {
-      await addToCommunityIndex(uid, task.id, newHistoryId);
+      // ✅ If shared, add to communityIndex
+      if (communityPosts) {
+        await addToCommunityIndex(uid, task.id, newHistoryId);
+      }
+
+      // ✅ Update localHistory
+      const newEntryWithId: TaskHistoryEntry = {
+        id: newHistoryId,
+        date: todayISO,
+        text: updateText,
+        photo: photoData,
+        communityPosts,
+        timestamp: new Date(), // ✅ required for TS
+      };
+
+      const updatedHistory = [...localHistory, newEntryWithId];
+      updatedHistory.sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      );
+      setLocalHistory(updatedHistory);
+
+      // ✅ Recalculate streak
+      const streak = calculateCalendarStreak(updatedHistory);
+
+      // ✅ Update Firestore task metadata
+      await updateTask(uid, task.id, {
+        lastUpdate: todayISO,
+        streak,
+      });
+
+      // ✅ Reset form
+      setUpdateText("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+
+      // Refresh parent
+      onRefresh();
+    } catch (error) {
+      console.error("Failed to save update:", error);
+      setFormError("Failed to save. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // ✅ Update localHistory
-    const newEntryWithId: TaskHistoryEntry = {
-      id: newHistoryId,
-      date: todayISO,
-      text: updateText,
-      photo: photoData,
-      communityPosts,
-      timestamp: new Date(), // ✅ required for TS
-    };
-
-    const updatedHistory = [...localHistory, newEntryWithId];
-    updatedHistory.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-    );
-    setLocalHistory(updatedHistory);
-
-    // ✅ Recalculate streak
-    const streak = calculateCalendarStreak(updatedHistory);
-
-    // ✅ Update Firestore task metadata
-    await updateTask(uid, task.id, {
-      lastUpdate: todayISO,
-      streak,
-    });
-
-    // ✅ Reset form
-    setUpdateText("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-
-    // Refresh parent
-    onRefresh();
   };
 
   return (
@@ -217,8 +228,12 @@ export function TaskDetailView({
                   <span>Share this update to community</span>
                 </label>
 
-                <Button onClick={handleSaveUpdate} className="w-full mt-4">
-                  Mark as Done
+                <Button 
+                  onClick={handleSaveUpdate} 
+                  className="w-full mt-4"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Saving..." : "Mark as Done"}
                 </Button>
               </>
             )}

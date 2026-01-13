@@ -20,6 +20,7 @@ export default function FriendRequestSendPage() {
   const [sent, setSent] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [friends, setFriends] = useState<any[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const search = async () => {
@@ -72,6 +73,7 @@ export default function FriendRequestSendPage() {
   const handleRequest = async (targetUid: string, targetUser: any) => {
     console.log("handleRequest called for:", targetUid, targetUser);
     if (!user) return;
+    if (pendingRequests.has(targetUid)) return; // Prevention
 
     if (hasSentRequest(targetUid)) {
       toast.warning("Friend request already sent!");
@@ -81,6 +83,8 @@ export default function FriendRequestSendPage() {
       toast.info("You are already friends!");
       return;
     }
+
+    setPendingRequests(prev => new Set(prev).add(targetUid));
 
     try {
       const result = await sendFriendRequest(user.uid, targetUid, "all");
@@ -96,6 +100,13 @@ export default function FriendRequestSendPage() {
     } catch (error) {
       console.error("Error sending friend request:", error);
       alert("Failed to send friend request");
+    } finally {
+      // Remove from pending set
+       setPendingRequests(prev => {
+         const next = new Set(prev);
+         next.delete(targetUid);
+         return next;
+       });
     }
   };
 
@@ -175,9 +186,15 @@ export default function FriendRequestSendPage() {
                   ) : (
                     <button
                       onClick={() => handleRequest(u.uid, u)}
-                      className="px-3 py-1 rounded-md bg-primary text-primary-foreground flex items-center gap-1 hover:bg-primary/90"
+                      disabled={pendingRequests.has(u.uid)}
+                      className={`px-3 py-1 rounded-md flex items-center gap-1 ${
+                        pendingRequests.has(u.uid) 
+                          ? "bg-primary/50 cursor-not-allowed" 
+                          : "bg-primary hover:bg-primary/90"
+                      } text-primary-foreground`}
                     >
-                      <UserPlus className="w-4 h-4" /> Request
+                      <UserPlus className="w-4 h-4" /> 
+                      {pendingRequests.has(u.uid) ? "Wait..." : "Request"}
                     </button>
                   )}
                 </div>

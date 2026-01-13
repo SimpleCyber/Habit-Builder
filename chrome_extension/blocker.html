@@ -73,6 +73,30 @@
       font-size: 12px;
       color: #666;
     }
+    .hx-btn-secondary {
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      background: #e5e7eb;
+      color: #374151;
+      border: none;
+      cursor: pointer;
+      transition: 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hx-btn-secondary:hover {
+      background: #d1d5db;
+    }
+    
+    .buttons-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center; /* or flex-start based on design desire, sticking to flow */
+    }
   </style>
 </head>
 <body>
@@ -94,10 +118,18 @@
       </div>
 
       <br>
-      <button id="hx-open-habitx" class="hx-btn-primary">
-        <i class="fa-solid fa-arrow-up-right-from-square"></i>
-        Go to HabitX
-      </button>
+      
+      <div class="buttons-row">
+        <button id="hx-open-habitx" class="hx-btn-primary">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          Go to HabitX
+        </button>
+
+        <button id="hx-open-settings" class="hx-btn-secondary">
+          <i class="fa-solid fa-gear"></i>
+          Settings
+        </button>
+      </div>
 
       <p class="hx-small">
         Some websites may still be allowed if you've whitelisted them in the HabitX panel.

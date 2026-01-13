@@ -1,0 +1,82 @@
+/* Dark Mode Overrides */
+body.dark-mode {
+  background: #111827 !important;
+  color: #f3f4f6 !important;
+}
+
+body.dark-mode .container,
+body.dark-mode .hx-container {
+  background: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+
+body.dark-mode .progress-box,
+body.dark-mode .hx-progress-row,
+body.dark-mode .hx-list-item {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #f3f4f6 !important;
+}
+
+body.dark-mode .hx-input {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode strong, 
+body.dark-mode .title {
+  color: #ffffff !important;
+}
+
+body.dark-mode .hx-sub,
+body.dark-mode .hx-small {
+  color: #9ca3af !important;
+}
+
+/* Toggle Switch */
+.theme-switch-wrapper {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.theme-switch {
+  display: inline-block;
+  height: 24px;
+  position: relative;
+  width: 48px;
+  margin-right: 10px;
+}
+.theme-switch input {
+  display:none;
+}
+.slider {
+  background-color: #ccc;
+  bottom: 0;
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: .4s;
+  border-radius: 34px;
+}
+.slider:before {
+  background-color: #fff;
+  bottom: 4px;
+  content: "";
+  height: 16px;
+  left: 4px;
+  position: absolute;
+  transition: .4s;
+  width: 16px;
+  border-radius: 50%;
+}
+input:checked + .slider {
+  background-color: #4f46e5;
+}
+input:checked + .slider:before {
+  transform: translateX(24px);
+}

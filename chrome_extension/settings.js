@@ -1,6 +1,6 @@
 // Load initial data
-chrome.storage.local.get(["requiredTasks", "allowedUrls", "completed", "total", "settingsLockedUntil"],
-    ({ requiredTasks, allowedUrls, completed, total, settingsLockedUntil }) => {
+chrome.storage.local.get(["requiredTasks", "allowedUrls", "completed", "total", "settingsLockedUntil", "theme"],
+    ({ requiredTasks, allowedUrls, completed, total, settingsLockedUntil, theme }) => {
 
         document.getElementById("completed").innerText = completed || 0;
         document.getElementById("total").innerText = total || 0;
@@ -9,8 +9,29 @@ chrome.storage.local.get(["requiredTasks", "allowedUrls", "completed", "total", 
 
         renderAllowedList(allowedUrls || []);
         checkLockStatus(settingsLockedUntil);
+
+        // Theme handling
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+            const checkbox = document.getElementById('checkbox');
+            if (checkbox) checkbox.checked = true;
+        }
     }
 );
+
+// Theme Toggle Listener
+const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
+if (toggleSwitch) {
+    toggleSwitch.addEventListener('change', function(e) {
+        if (e.target.checked) {
+            document.body.classList.add('dark-mode');
+            chrome.storage.local.set({ theme: 'dark' });
+        } else {
+            document.body.classList.remove('dark-mode');
+            chrome.storage.local.set({ theme: 'light' });
+        }
+    });
+}
 
 
 // Save required tasks

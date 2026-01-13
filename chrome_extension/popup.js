@@ -1,7 +1,22 @@
+// Apply Theme
+chrome.storage.local.get("theme", ({ theme }) => {
+    if (theme === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
+});
+
 // Open Settings Page
 document.getElementById('open-settings').addEventListener('click', () => {
-    chrome.tabs.create({
-        url: chrome.runtime.getURL("settings.html")
+    const url = chrome.runtime.getURL("settings.html");
+    
+    chrome.tabs.query({ url: url }, (tabs) => {
+        const existing = tabs.find(t => t.url === url);
+        if (existing && existing.id) {
+            chrome.tabs.update(existing.id, { active: true });
+            chrome.windows.update(existing.windowId, { focused: true });
+        } else {
+            chrome.tabs.create({ url });
+        }
     });
 });
 

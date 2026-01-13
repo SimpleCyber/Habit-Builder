@@ -114,12 +114,23 @@
     }
   </style>
 </head>
+<link rel="stylesheet" href="styles.css">
 
 <body>
   <div class="hx-wrap">
     <div>
 
-      <h1><i class="fa-solid fa-gear"></i> HabitX Settings</h1>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1><i class="fa-solid fa-gear"></i> HabitX Settings</h1>
+        
+        <div class="theme-switch-wrapper">
+           <label class="theme-switch" for="checkbox">
+            <input type="checkbox" id="checkbox" />
+            <div class="slider round"></div>
+          </label>
+          <span>Dark Mode</span>
+        </div>
+      </div>
 
       <div class="hx-progress-row">
         <span>Today's Progress</span>

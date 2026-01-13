@@ -61,10 +61,28 @@ function checkLockStatus(lockedUntil) {
 
 // Add new URL
 document.getElementById("add-url").addEventListener("click", () => {
-    const url = document.getElementById("url-input").value.trim();
+    let url = document.getElementById("url-input").value.trim();
     if (!url) return;
 
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        url = "https://" + url;
+    }
+
+    try {
+        new URL(url); // Validate URL
+    } catch (e) {
+        alert("Invalid URL. Please enter a valid domain or URL.");
+        return;
+    }
+
     chrome.storage.local.get(["allowedUrls"], ({ allowedUrls }) => {
+        // Prevent duplicates
+        if (allowedUrls && allowedUrls.includes(url)) {
+            alert("This URL is already in the list.");
+            document.getElementById("url-input").value = "";
+            return;
+        }
+
         const updated = allowedUrls ? [...allowedUrls, url] : [url];
 
         chrome.storage.local.set({ allowedUrls: updated }, () => {

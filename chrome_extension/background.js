@@ -30,9 +30,14 @@ chrome.storage.onChanged.addListener((changes) => {
 });
 
 // Helper: normalize hostname
+// Helper: normalize hostname
 function cleanHost(rawUrl) {
   try {
-    const host = new URL(rawUrl).hostname.toLowerCase();
+    let urlStr = rawUrl.trim();
+    if (!urlStr.startsWith("http://") && !urlStr.startsWith("https://")) {
+      urlStr = "https://" + urlStr;
+    }
+    const host = new URL(urlStr).hostname.toLowerCase();
     return host.startsWith("www.") ? host.slice(4) : host;
   } catch {
     return "";
@@ -41,6 +46,10 @@ function cleanHost(rawUrl) {
 
 // Main blocking logic
 chrome.webNavigation.onBeforeNavigate.addListener((details) => {
+  // Only block the main frame (frameId 0). 
+  // Blocking subframes (iframes) usually breaks sites or redirects the whole tab unexpectedly.
+  if (details.frameId !== 0) return;
+
   const url = details.url;
 
   // Only http/https
@@ -50,6 +59,21 @@ chrome.webNavigation.onBeforeNavigate.addListener((details) => {
 
   // Always allow HabitX site
   if (hostname === "habit-builder-rho.vercel.app") return;
+
+  // System Allowed Domains (Auth & Critical infrastructure)
+  const systemAllowed = [
+    "google.com",       // Broad allow for all google services (auth, search, etc)
+    "accounts.google.com",
+    "www.googleapis.com", 
+    "firebase.com",
+    "firebaseapp.com",
+    "github.com",       
+    "microsoft.com",    
+    "live.com"          
+  ];
+
+  const isSystemAllowed = systemAllowed.some(d => hostname === d || hostname.endsWith("." + d));
+  if (isSystemAllowed) return;
 
   // If no tasks known yet, don't block
   if (total === 0) return;

@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { Suspense } from "react";
 import "./globals.css";
 import { Toaster } from "sonner";
+import HelpDeckWidget from "@/components/layout/HelpDeckWidget";
 
 export const metadata: Metadata = {
   title: "HabitX",
@@ -23,7 +24,10 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Suspense fallback={<div>Loading...</div>}>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            <HelpDeckWidget />
+          </AuthProvider>
         </Suspense>
         <Analytics />
         <Toaster position="bottom-right" />

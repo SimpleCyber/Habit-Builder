@@ -62,6 +62,39 @@ Got ideas? We'd love your help!
 
 <div align="center">
 
+---
+<!-- env -->
+
+# Firebase Config
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
+
+
+
+# in firbase 
+# Auth : firebase Google , Email/password
+# Databse : firestore
+
+
+# Rules : 
+
+
+# rules_version = '2';
+# service cloud.firestore {
+#   match /databases/{database}/documents {
+#     match /{document=**} {
+#       allow read, write: if request.auth != null; 
+#     }
+#   }
+# }
+
+
+---
 ### 🌟 Top Contributors
 
 <a href="https://github.com/SimpleCyber/Habit-Builder/graphs/contributors">
@@ -75,3 +108,7 @@ Got ideas? We'd love your help!
 [⬆ Back to top](#-habit-builder)
 
 </div>
+
+
+
+

@@ -81,7 +81,7 @@ export function MainView({
       {/* Add Button */}
       <button
         onClick={handleAddClick}
-        className="fixed bottom-6 right-6 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-xl hover:shadow-2xl"
+        className="fixed bottom-2 right-14 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full w-15 h-15 flex items-center justify-center shadow-xl hover:shadow-2xl z-40"
       >
         <Plus className="w-6 h-6" />
       </button>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 // Auth + Tasks hooks
 import { useAuth } from "@/hooks/use-auth";
-import { useTasks } from "@/hooks/use-tasks";
+import { useTasksContext } from "@/hooks/use-tasks-context";
 
 // Views & Modals
 import { MainView } from "@/components/views/main-view";
@@ -24,23 +24,23 @@ import {
 // Types
 import type { Task, TaskHistoryEntry } from "@/lib/types";
 
-// Firestore helpers (to fetch history per task)
-import { getTaskHistory } from "@/lib/firebase-db";
-
 export default function HomePage() {
   const router = useRouter();
 
   // ✅ Auth
   const { user, loading: authLoading } = useAuth();
 
-  // ✅ Tasks
+  // ✅ Tasks & Histories from Global Context
   const {
     tasks,
+    histories,
     loading: tasksLoading,
+    histLoading,
     addTask,
     deleteTask,
     updateTask,
-  } = useTasks();
+    refreshHistories,
+  } = useTasksContext();
 
   // ✅ UI state
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
@@ -48,12 +48,6 @@ export default function HomePage() {
   const [showMaxTasks, setShowMaxTasks] = useState(false);
   const searchParams = useSearchParams();
   const [darkMode, setDarkMode] = useState(false);
-
-  // ✅ Histories map: taskId -> TaskHistoryEntry[]
-  const [histories, setHistories] = useState<
-    Record<string, TaskHistoryEntry[]>
-  >({});
-  const [histLoading, setHistLoading] = useState(false);
 
   // Redirect if unauthenticated
   useEffect(() => {
@@ -103,67 +97,18 @@ export default function HomePage() {
     }
   }, [searchParams, handleOpenAddModal]);
 
-  // ✅ New task payload matches Option A (no history, no id/createdAt/streak/lastUpdate)
+  // ✅ New task payload
   const handleAddTask = async (
     task: Omit<Task, "id" | "createdAt" | "streak" | "lastUpdate">,
   ) => {
     await addTask(task);
     setShowAddModal(false);
-    // histories for new task will be empty initially; no need to reload all
   };
 
   const handleDeleteTask = async (taskId: string) => {
     await deleteTask(taskId);
     setCurrentTaskId(null);
-    // remove history cache for deleted task
-    setHistories((prev) => {
-      const copy = { ...prev };
-      delete copy[taskId];
-      return copy;
-    });
   };
-
-  // ✅ Load histories for all tasks (or refresh specific task)
-  const refreshHistories = useCallback(
-    async (taskIds?: string[]) => {
-      if (!user) return;
-      const ids = taskIds ?? tasks.map((t) => t.id);
-      if (ids.length === 0) return;
-
-      setHistLoading(true);
-      try {
-        const pairs = await Promise.all(
-          ids.map(async (id) => {
-            const h = await getTaskHistory(user.uid, id);
-            return [id, h] as const;
-          }),
-        );
-        setHistories((prev) => {
-          const next = { ...prev };
-          for (const [id, h] of pairs) next[id] = h;
-          return next;
-        });
-      } finally {
-        setHistLoading(false);
-      }
-    },
-    [user, tasks],
-  );
-
-  // Initial history load (whenever tasks list changes)
-  useEffect(() => {
-    if (!user) return;
-    if (tasks.length === 0) {
-      setHistories({});
-      return;
-    }
-    // Load/refresh only for tasks missing in cache
-    const missing = tasks
-      .map((t) => t.id)
-      .filter((id) => histories[id] === undefined);
-    if (missing.length > 0) refreshHistories(missing);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, tasks]);
 
   // Helper to refresh the currently open task’s history (after check-in)
   const handleRefresh = async () => {
@@ -172,7 +117,7 @@ export default function HomePage() {
   };
 
   const currentTask = useMemo(
-    () => (tasks ? tasks.find((t) => t.id === currentTaskId) : null),
+    () => (tasks ? tasks.find((t: Task) => t.id === currentTaskId) : null),
     [tasks, currentTaskId],
   );
 

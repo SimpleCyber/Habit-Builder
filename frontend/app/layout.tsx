@@ -8,6 +8,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import HelpDeckWidget from "@/components/layout/HelpDeckWidget";
 import { ClientLayout } from "@/components/layout/client-layout";
+import { TasksProvider } from "@/hooks/use-tasks-context";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -44,8 +45,10 @@ export default function RootLayout({
       >
         <Suspense fallback={<div>Loading...</div>}>
           <AuthProvider>
-            <ClientLayout>{children}</ClientLayout>
-            <HelpDeckWidget />
+            <TasksProvider>
+              <ClientLayout>{children}</ClientLayout>
+              <HelpDeckWidget />
+            </TasksProvider>
           </AuthProvider>
         </Suspense>
         <Analytics />

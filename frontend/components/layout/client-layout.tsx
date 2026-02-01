@@ -3,10 +3,14 @@
 import { usePathname, useRouter } from "next/navigation";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import React from "react";
+import { useAppBadge } from "@/hooks/use-app-badge";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+
+  // Badge count management
+  useAppBadge();
 
   // Pages where MobileNav should be visible
   const showMobileNav =

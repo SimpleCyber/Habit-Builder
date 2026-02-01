@@ -11,8 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { UserMenu } from "@/components/layout/user-menu";
-import Link from "next/link";
+import { Header } from "@/components/layout/header";
 
 interface MainViewProps {
   tasks: Task[];
@@ -29,33 +28,16 @@ export function MainView({
   onOpenTask,
   onOpenAddModal,
 }: MainViewProps) {
-  const [showMaxTasks, setShowMaxTasks] = useState(false);
-
   const handleAddClick = () => {
-    if (tasks.length >= 5) {
-      setShowMaxTasks(true);
-      return;
-    }
     onOpenAddModal();
   };
 
   return (
-    <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">
-      {/* Header */}
-      <div className="glass-effect rounded-2xl shadow-xl p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">HabitX</h1>
-          <div className="flex items-center gap-2">
-            <Link href="/community">
-              <NewspaperIcon className="w-5 h-5" />
-            </Link>
-            <UserMenu />
-          </div>
-        </div>
-      </div>
+    <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6 lg:p-8">
+      <Header />
 
       {/* Task List */}
-      <div className="space-y-4 mb-6">
+      <div className="space-y-4 pb-20 lg:pb-8">
         {tasks.length === 0 ? (
           <div className="glass-effect rounded-2xl p-8 text-center">
             <Inbox className="w-16 h-16 mx-auto text-gray-400 mb-4" />
@@ -78,25 +60,13 @@ export function MainView({
         )}
       </div>
 
-      {/* Add Button */}
+      {/* Desktop Add Button (Restored) */}
       <button
         onClick={handleAddClick}
-        className="fixed bottom-2 right-14 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full w-15 h-15 flex items-center justify-center shadow-xl hover:shadow-2xl z-40"
+        className="hidden lg:flex fixed bottom-8 right-8 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full w-14 h-14 items-center justify-center shadow-xl hover:shadow-2xl hover:scale-110 active:scale-95 transition-all z-40"
       >
-        <Plus className="w-6 h-6" />
+        <Plus className="w-7 h-7" />
       </button>
-
-      {/* Limit Dialog */}
-      <Dialog open={showMaxTasks} onOpenChange={setShowMaxTasks}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Task limit reached</DialogTitle>
-            <DialogDescription>
-              You can create up to 5 tasks. Delete a task to add a new one.
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

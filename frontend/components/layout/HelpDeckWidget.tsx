@@ -7,8 +7,8 @@ export default function HelpDeckWidget() {
   const { user, profile } = useAuth();
 
   useEffect(() => {
-    // Only proceed if user is logged in
-    if (!user) return;
+    // Only proceed if user is logged in AND not on mobile
+    if (!user || window.innerWidth < 768) return;
 
     // Set configuration variables
     (window as any).CRISP_WEBSITE_ID = "ws_1769213119029_e27drdthz";

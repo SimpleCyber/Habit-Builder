@@ -46,6 +46,7 @@ export function TaskDetailView({
   history,
   uid,
   onDelete,
+  onClose,
   onRefresh,
 }: TaskDetailViewProps) {
   const [updateText, setUpdateText] = useState("");
@@ -169,131 +170,147 @@ export function TaskDetailView({
   };
 
   return (
-    <div className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">
-      <Header />
-
-      {/* ✅ Task Card */}
-      <div className="mb-5">
-        <TaskCard task={task} history={localHistory} readOnly />
+    <div className="flex flex-col min-h-[100dvh] bg-background">
+      {/* Desktop Header (Restored) */}
+      <div className="hidden lg:block container mx-auto pt-6">
+        <Header />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* LEFT */}
-        <div className="space-y-6">
-          <div className="glass-effect rounded-2xl shadow-xl p-6">
-            <h3 className="text-xl font-bold mb-4">
-              {alreadyChecked ? "Today's Update" : "Update Today"}
-            </h3>
+      {/* Mobile Top Bar (Optimization) */}
+      <div className="lg:hidden flex items-center gap-4 px-6 py-4 border-b border-border sticky top-0 bg-background/80 backdrop-blur-xl z-30">
+        <button
+          onClick={onClose}
+          className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors active:scale-90"
+        >
+          <X className="w-6 h-6" />
+        </button>
+        <h2 className="text-xl font-bold truncate flex-1">{task.title}</h2>
+      </div>
 
-            {formError && (
-              <p className="text-sm text-destructive mb-2">{formError}</p>
-            )}
-
-            {alreadyChecked && todayEntry && (
-              <div className="mb-4 rounded-lg border p-3">
-                {todayEntry.photo && (
-                  <img
-                    src={todayEntry.photo}
-                    className="mb-2 rounded-md w-full object-cover"
-                  />
-                )}
-                <p className="text-sm">{todayEntry.text}</p>
-              </div>
-            )}
-
-            {!alreadyChecked && (
-              <>
-                <Textarea
-                  value={updateText}
-                  onChange={(e) => setUpdateText(e.target.value)}
-                  placeholder="What did you accomplish today?"
-                  maxLength={100}
-                  className="w-full h-24"
-                />
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="w-full p-2 border rounded-lg mt-3"
-                />
-
-                <label className="flex items-center space-x-2 mt-3 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={communityPosts}
-                    onChange={(e) => setCommunityPosts(e.target.checked)}
-                  />
-                  <span>Share this update to community</span>
-                </label>
-
-                <Button 
-                  onClick={handleSaveUpdate} 
-                  className="w-full mt-4"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Saving..." : "Mark as Done"}
-                </Button>
-              </>
-            )}
-
-            {alreadyChecked && todayEntry && (
-              <button
-                onClick={toggleCommunityPost}
-                className="flex items-center gap-2 px-3 py-1 mt-3 rounded-full bg-gray-100 dark:bg-gray-700"
-              >
-                {todayEntry.communityPosts ? (
-                  <>
-                    <Share2 className="w-4 h-4 text-green-600" />
-                    <span className="text-xs text-green-600">Shared</span>
-                  </>
-                ) : (
-                  <>
-                    <EyeOff className="w-4 h-4 text-gray-500" />
-                    <span className="text-xs text-gray-500">Private</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-
-          <div className="glass-effect rounded-2xl shadow-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold">This Month's Progress</h3>
-              <button
-                onClick={() => setShowHistory(!showHistory)}
-                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-              >
-                {showHistory ? <X /> : <History />}
-              </button>
-            </div>
-            <CalendarView history={localHistory} />
-          </div>
+      <div className="flex-1 overflow-y-auto px-6 py-6 lg:py-10 pb-24 lg:pb-10 space-y-8 max-w-2xl mx-auto w-full">
+        {/* ✅ Task Card */}
+        <div className="mb-5">
+          <TaskCard task={task} history={localHistory} readOnly />
         </div>
 
-        {/* RIGHT */}
-        <div className="space-y-6">
-          {showHistory && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* LEFT */}
+          <div className="space-y-6">
+            <div className="glass-effect rounded-2xl shadow-xl p-6">
+              <h3 className="text-xl font-bold mb-4">
+                {alreadyChecked ? "Today's Update" : "Update Today"}
+              </h3>
+
+              {formError && (
+                <p className="text-sm text-destructive mb-2">{formError}</p>
+              )}
+
+              {alreadyChecked && todayEntry && (
+                <div className="mb-4 rounded-lg border p-3">
+                  {todayEntry.photo && (
+                    <img
+                      src={todayEntry.photo}
+                      className="mb-2 rounded-md w-full object-cover"
+                    />
+                  )}
+                  <p className="text-sm">{todayEntry.text}</p>
+                </div>
+              )}
+
+              {!alreadyChecked && (
+                <>
+                  <Textarea
+                    value={updateText}
+                    onChange={(e) => setUpdateText(e.target.value)}
+                    placeholder="What did you accomplish today?"
+                    maxLength={100}
+                    className="w-full h-24"
+                  />
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="w-full p-2 border rounded-lg mt-3"
+                  />
+
+                  <label className="flex items-center space-x-2 mt-3 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={communityPosts}
+                      onChange={(e) => setCommunityPosts(e.target.checked)}
+                    />
+                    <span>Share this update to community</span>
+                  </label>
+
+                  <Button
+                    onClick={handleSaveUpdate}
+                    className="w-full mt-4"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Saving..." : "Mark as Done"}
+                  </Button>
+                </>
+              )}
+
+              {alreadyChecked && todayEntry && (
+                <button
+                  onClick={toggleCommunityPost}
+                  className="flex items-center gap-2 px-3 py-1 mt-3 rounded-full bg-gray-100 dark:bg-gray-700"
+                >
+                  {todayEntry.communityPosts ? (
+                    <>
+                      <Share2 className="w-4 h-4 text-green-600" />
+                      <span className="text-xs text-green-600">Shared</span>
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="w-4 h-4 text-gray-500" />
+                      <span className="text-xs text-gray-500">Private</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
             <div className="glass-effect rounded-2xl shadow-xl p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold">History</h3>
-                <button onClick={() => setShowHistory(false)}>
-                  <X className="w-6 h-6" />
+                <h3 className="text-xl font-bold">This Month's Progress</h3>
+                <button
+                  onClick={() => setShowHistory(!showHistory)}
+                  className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {showHistory ? <X /> : <History />}
                 </button>
               </div>
-              <HistoryList history={localHistory} />
+              <CalendarView history={localHistory} />
             </div>
-          )}
+          </div>
 
-          <div className="glass-effect rounded-2xl shadow-xl p-6">
-            <Button
-              variant="destructive"
-              className="w-full"
-              onClick={() => setConfirmDelete(true)}
-            >
-              Delete Task
-            </Button>
+          {/* RIGHT */}
+          <div className="space-y-6">
+            {showHistory && (
+              <div className="glass-effect rounded-2xl shadow-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold">History</h3>
+                  <button onClick={() => setShowHistory(false)}>
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <HistoryList history={localHistory} />
+              </div>
+            )}
+
+            <div className="glass-effect rounded-2xl shadow-xl p-6">
+              <Button
+                variant="destructive"
+                className="w-full"
+                onClick={() => setConfirmDelete(true)}
+              >
+                Delete Task
+              </Button>
+            </div>
           </div>
         </div>
       </div>

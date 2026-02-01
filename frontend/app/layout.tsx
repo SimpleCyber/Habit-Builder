@@ -1,5 +1,4 @@
-import type React from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
@@ -8,6 +7,15 @@ import { Suspense } from "react";
 import "./globals.css";
 import { Toaster } from "sonner";
 import HelpDeckWidget from "@/components/layout/HelpDeckWidget";
+import { ClientLayout } from "@/components/layout/client-layout";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: "HabitX",
@@ -31,10 +39,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+      <body
+        className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased selection:bg-primary/10 overflow-x-hidden`}
+      >
         <Suspense fallback={<div>Loading...</div>}>
           <AuthProvider>
-            {children}
+            <ClientLayout>{children}</ClientLayout>
             <HelpDeckWidget />
           </AuthProvider>
         </Suspense>

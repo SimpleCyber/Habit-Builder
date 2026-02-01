@@ -6,9 +6,9 @@ import { Github, Twitter, Linkedin } from "lucide-react";
 export function Footer() {
   return (
     <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0b0f13]">
-      <div className="container px-4 py-12 mx-auto">
-        <div className="grid gap-8 lg:grid-cols-4">
-          <div className="lg:col-span-1">
+      <div className="container px-4 py-8 sm:py-12 mx-auto">
+        <div className="grid gap-10 lg:grid-cols-4">
+          <div className="lg:col-span-1 flex flex-col items-center lg:items-start text-center lg:text-left">
             <Link
               href="/"
               className="text-xl font-bold tracking-tighter flex items-center gap-2"
@@ -20,7 +20,7 @@ export function Footer() {
                 HabitX
               </span>
             </Link>
-            <p className="mt-4 text-sm text-muted-foreground">
+            <p className="mt-4 text-sm text-muted-foreground max-w-xs">
               Empowering you to build lasting habits and achieve your full
               potential.
             </p>
@@ -46,8 +46,8 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="grid gap-8 sm:grid-cols-2 lg:col-span-3 lg:grid-cols-3">
-            <div>
+          <div className="grid gap-8 grid-cols-2 md:grid-cols-3 lg:col-span-3">
+            <div className="text-center lg:text-left">
               <h3 className="mb-4 text-sm font-semibold tracking-wider text-gray-900 dark:text-gray-100 uppercase">
                 Product
               </h3>
@@ -80,7 +80,7 @@ export function Footer() {
                   <Link
                     href="https://chromewebstore.google.com"
                     target="_blank"
-                    className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1.5"
+                    className="text-sm text-muted-foreground hover:text-primary flex items-center justify-center lg:justify-start gap-1.5"
                   >
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                     Chrome Extension
@@ -88,7 +88,7 @@ export function Footer() {
                 </li>
               </ul>
             </div>
-            <div>
+            <div className="text-center lg:text-left">
               <h3 className="mb-4 text-sm font-semibold tracking-wider text-gray-900 dark:text-gray-100 uppercase">
                 Resources
               </h3>
@@ -119,7 +119,7 @@ export function Footer() {
                 </li>
               </ul>
             </div>
-            <div>
+            <div className="text-center lg:text-left col-span-2 md:col-span-1">
               <h3 className="mb-4 text-sm font-semibold tracking-wider text-gray-900 dark:text-gray-100 uppercase">
                 Company
               </h3>
@@ -152,7 +152,7 @@ export function Footer() {
             </div>
           </div>
         </div>
-        <div className="pt-8 mt-12 border-t border-gray-200 dark:border-gray-800">
+        <div className="pt-6 mt-8 border-t border-gray-200 dark:border-gray-800">
           <p className="text-sm text-center text-muted-foreground">
             © {new Date().getFullYear()} HabitX. All rights reserved.
           </p>

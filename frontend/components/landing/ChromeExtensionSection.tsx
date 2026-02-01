@@ -31,14 +31,14 @@ const steps = [
 
 export function ChromeExtensionSection() {
   return (
-    <section className="py-24 relative overflow-hidden bg-[#0A0A0A] border-t border-white/5">
+    <section className="py-16 sm:py-24 relative overflow-hidden bg-[#0A0A0A] border-t border-white/5">
       {/* Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-green-500/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="container px-4 mx-auto relative z-10">
-        <div className="flex flex-col lg:flex-row items-center gap-16">
+        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
           {/* Left: Content */}
-          <div className="flex-1 text-left">
+          <div className="flex-1 text-center lg:text-left">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -102,7 +102,7 @@ export function ChromeExtensionSection() {
           </div>
 
           {/* Right: Visual Mockup */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative hidden lg:block">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -111,7 +111,7 @@ export function ChromeExtensionSection() {
               className="relative"
             >
               {/* Fake Extension UI Mockup */}
-              <div className="w-full max-w-[400px] mx-auto aspect-[4/5] bg-[#111] rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden group">
+              <div className="w-full max-w-[280px] sm:max-w-[400px] mx-auto aspect-[4/5] bg-[#111] rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                 {/* Header of Popup */}

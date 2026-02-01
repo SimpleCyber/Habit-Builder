@@ -13,6 +13,15 @@ export const metadata: Metadata = {
   title: "HabitX",
   description: "Created by satyam yadav",
   generator: "HabitX",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "HabitX",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({

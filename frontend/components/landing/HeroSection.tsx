@@ -186,11 +186,13 @@ export function HeroSection() {
             transition={{ delay: 0.3, type: "spring" }}
             className="relative z-10 mr-[-20px] mb-[-40px]"
           >
-            <img
-              src="/images/moe.png"
-              alt="Mascot Moe"
-              className="w-72 h-auto"
-            />
+            <Link href="/auth">
+              <img
+                src="/images/moe.png"
+                alt="Mascot Moe"
+                className="w-72 h-auto cursor-pointer"
+              />
+            </Link>
           </motion.div>
 
           {/* Speech Bubble / CTA */}

@@ -171,8 +171,8 @@ export function TaskDetailView({
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-background">
-      {/* Desktop Header (Restored) */}
-      <div className="hidden lg:block container mx-auto pt-6">
+      {/* Desktop Header (Unified) */}
+      <div className="hidden lg:block max-w-2xl mx-auto w-full px-6 pt-2">
         <Header />
       </div>
 
@@ -187,7 +187,7 @@ export function TaskDetailView({
         <h2 className="text-xl font-bold truncate flex-1">{task.title}</h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 lg:py-10 pb-24 lg:pb-10 space-y-8 max-w-2xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto px-6 py-4 lg:py-6 pb-24 lg:pb-10 space-y-6 max-w-2xl mx-auto w-full">
         {/* ✅ Task Card */}
         <div className="mb-5">
           <TaskCard task={task} history={localHistory} readOnly />

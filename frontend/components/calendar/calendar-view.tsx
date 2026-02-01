@@ -31,9 +31,9 @@ export function CalendarView({ history }: CalendarViewProps) {
   return (
     <div className="grid grid-cols-7 gap-1">
       {/* Day headers */}
-      {days.map((day) => (
+      {days.map((day, i) => (
         <div
-          key={day}
+          key={`${day}-${i}`}
           className="text-center text-xs font-semibold text-gray-600 dark:text-gray-400"
         >
           {day}

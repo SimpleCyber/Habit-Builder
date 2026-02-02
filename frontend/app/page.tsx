@@ -24,11 +24,11 @@ export default function LandingPage() {
   useEffect(() => {
     // If user is already logged in, redirect to home (dashboard)
     if (!loading && user) {
-      router.push("/home");
+      router.replace("/home");
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  if (loading || user) {
     return null;
   }
 
@@ -123,4 +123,3 @@ export default function LandingPage() {
     </div>
   );
 }
-

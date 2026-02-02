@@ -63,7 +63,7 @@ export function MainView({
       {/* Desktop Add Button (Restored) */}
       <button
         onClick={handleAddClick}
-        className="hidden lg:flex fixed bottom-8 right-8 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full w-14 h-14 items-center justify-center shadow-xl hover:shadow-2xl hover:scale-110 active:scale-95 transition-all z-40"
+        className="hidden lg:flex fixed bottom-3 right-14 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full w-14 h-14 items-center justify-center shadow-xl hover:shadow-2xl hover:scale-110 active:scale-95 transition-all z-40"
       >
         <Plus className="w-7 h-7" />
       </button>

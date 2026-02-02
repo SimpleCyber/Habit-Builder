@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { History, X, EyeOff, Share2 } from "lucide-react";
+import { History, X, EyeOff, Share2, Settings } from "lucide-react";
 import type { Task, TaskHistoryEntry } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,6 +39,7 @@ interface TaskDetailViewProps {
   onUpdate: (taskId: string, updates: Partial<Task>) => Promise<void>;
   onHome?: () => void;
   onRefresh: () => void; // parent reload function
+  onEdit?: () => void;
 }
 
 export function TaskDetailView({
@@ -48,6 +49,7 @@ export function TaskDetailView({
   onDelete,
   onClose,
   onRefresh,
+  onEdit,
 }: TaskDetailViewProps) {
   const [updateText, setUpdateText] = useState("");
   const [showHistory, setShowHistory] = useState(false);
@@ -185,6 +187,14 @@ export function TaskDetailView({
           <X className="w-6 h-6" />
         </button>
         <h2 className="text-xl font-bold truncate flex-1">{task.title}</h2>
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="p-2 rounded-full hover:bg-muted transition-colors active:scale-90"
+          >
+            <Settings className="w-6 h-6" />
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-4 lg:py-6 pb-24 lg:pb-10 space-y-6 max-w-2xl mx-auto w-full">
@@ -302,13 +312,23 @@ export function TaskDetailView({
               </div>
             )}
 
-            <div className="glass-effect rounded-2xl shadow-xl p-6">
+            <div className="glass-effect rounded-2xl shadow-xl p-6 space-y-3">
+              {onEdit && (
+                <Button
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2"
+                  onClick={onEdit}
+                >
+                  <Settings className="w-4 h-4" />
+                  Edit Habit Details
+                </Button>
+              )}
               <Button
                 variant="destructive"
                 className="w-full"
                 onClick={() => setConfirmDelete(true)}
               >
-                Delete Task
+                Delete Habit
               </Button>
             </div>
           </div>
@@ -318,7 +338,7 @@ export function TaskDetailView({
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete this task?</DialogTitle>
+            <DialogTitle>Delete this habit?</DialogTitle>
             <DialogDescription>This cannot be undone.</DialogDescription>
           </DialogHeader>
           <DialogFooter>

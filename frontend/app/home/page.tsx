@@ -10,7 +10,7 @@ import { useTasksContext } from "@/hooks/use-tasks-context";
 // Views & Modals
 import { MainView } from "@/components/views/main-view";
 import { TaskDetailView } from "@/components/views/task-detail-view";
-import { AddTaskModal } from "@/components/modals/add-task-modal";
+import { TaskModal } from "@/components/modals/task-modal";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +19,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 
 // Types
@@ -45,6 +46,7 @@ export default function HomePage() {
   // ✅ UI state
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showMaxTasks, setShowMaxTasks] = useState(false);
   const searchParams = useSearchParams();
   const [darkMode, setDarkMode] = useState(false);
@@ -105,6 +107,14 @@ export default function HomePage() {
     setShowAddModal(false);
   };
 
+  const handleEditTask = async (
+    taskData: Omit<Task, "id" | "createdAt" | "history" | "iconBg">,
+  ) => {
+    if (!currentTaskId) return;
+    await updateTask(currentTaskId, taskData);
+    setShowEditModal(false);
+  };
+
   const handleDeleteTask = async (taskId: string) => {
     await deleteTask(taskId);
     setCurrentTaskId(null);
@@ -158,43 +168,42 @@ export default function HomePage() {
           onUpdate={updateTask}
           onHome={() => router.push("/home")}
           onRefresh={handleRefresh} // ✅ Refresh history after check-in
+          onEdit={() => setShowEditModal(true)}
         />
       ) : null}
 
-      {/* ✅ ADD TASK MODAL */}
+      {/* ✅ TASK MODALS */}
       {showAddModal && (
-        <AddTaskModal
+        <TaskModal
           onClose={() => setShowAddModal(false)}
-          onAdd={handleAddTask}
+          onSave={handleAddTask}
           maxTasks={tasks.length >= 5}
         />
       )}
 
-      {/* ✅ Limit Dialog (Restyled for Premium Feel) */}
+      {showEditModal && currentTask && (
+        <TaskModal
+          task={currentTask}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleEditTask}
+        />
+      )}
+
+      {/* ✅ Limit Dialog (Simple Clean) */}
       <Dialog open={showMaxTasks} onOpenChange={setShowMaxTasks}>
-        <DialogContent className="max-w-[85vw] sm:max-w-md rounded-[32px] border-border bg-background/95 backdrop-blur-2xl p-8 shadow-2xl outline-none">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-500 to-orange-500 opacity-80" />
-          <DialogHeader className="pt-4">
-            <DialogTitle className="text-3xl font-black tracking-tighter mb-2">
-              Limit Reached
-            </DialogTitle>
-            <DialogDescription className="text-lg font-medium text-muted-foreground leading-relaxed">
-              You've hit the{" "}
-              <span className="text-foreground font-bold">5-task limit</span>.
-              <br />
-              <br />
-              Time to refine! Please complete or delete an existing habit to
-              start a new journey.
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Limit Reached</DialogTitle>
+            <DialogDescription>
+              You've hit the 5-habit limit. Please complete or delete an
+              existing habit to start a new journey.
             </DialogDescription>
           </DialogHeader>
-          <div className="mt-8">
-            <Button
-              onClick={() => setShowMaxTasks(false)}
-              className="w-full h-14 rounded-2xl text-lg font-bold bg-primary text-primary-foreground shadow-xl active:scale-95 transition-all"
-            >
+          <DialogFooter>
+            <Button onClick={() => setShowMaxTasks(false)} className="w-full">
               Got it
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

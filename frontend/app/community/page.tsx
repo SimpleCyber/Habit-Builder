@@ -10,7 +10,7 @@ import {
   getOutgoingRequests,
   sendFriendRequest,
 } from "@/lib/firebase-db";
-import { Loader, UserPlus, Clock, Flame } from "lucide-react";
+import { Loader, Flame } from "lucide-react";
 import { toast } from "sonner";
 import type { TaskHistoryEntry, Task } from "@/lib/types";
 
@@ -64,7 +64,7 @@ export default function CommunityPage() {
 
       const friendUids = new Set(friendsList.map((f) => f.uid));
       const sentUids = new Set(
-        outgoing.filter((r) => r.status === "pending").map((r) => r.toUid)
+        outgoing.filter((r) => r.status === "pending").map((r) => r.toUid),
       );
 
       setFriends(friendUids);
@@ -80,7 +80,7 @@ export default function CommunityPage() {
         const post = await getCommunityPostByReference(
           item.userId,
           item.taskId,
-          item.historyId
+          item.historyId,
         );
 
         if (!post) continue;
@@ -121,7 +121,7 @@ export default function CommunityPage() {
 
       const { index, lastDoc } = await getCommunityIndexPage(
         POSTS_PER_LOAD,
-        lastIndexDoc.current
+        lastIndexDoc.current,
       );
       lastIndexDoc.current = lastDoc;
 
@@ -131,7 +131,7 @@ export default function CommunityPage() {
         const post = await getCommunityPostByReference(
           item.userId,
           item.taskId,
-          item.historyId
+          item.historyId,
         );
 
         if (!post) continue;
@@ -170,7 +170,7 @@ export default function CommunityPage() {
           loadMore();
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.2 },
     );
 
     if (observerTarget.current) observer.observe(observerTarget.current);
@@ -200,12 +200,33 @@ export default function CommunityPage() {
 
       const updated = await getOutgoingRequests(user.uid);
       const newSet = new Set(
-        updated.filter((r) => r.status === "pending").map((r) => r.toUid)
+        updated.filter((r) => r.status === "pending").map((r) => r.toUid),
       );
       setSentRequests(newSet);
     } catch {
       toast.error("Failed to send request");
     }
+  };
+
+  // ---------------------------------------------------------
+  // ✅ Helper: Relative Time
+  // ---------------------------------------------------------
+  const timeAgo = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + "y";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + "mo";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + "d";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + "h";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + "m";
+    return "now";
   };
 
   // ---------------------------------------------------------
@@ -238,14 +259,13 @@ export default function CommunityPage() {
     );
 
   return (
-    <main className="min-h-screen container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">
+    <main className="min-h-screen container mx-auto max-w-md md:max-w-xl lg:max-w-2xl border-x border-zinc-200 dark:border-zinc-800 min-h-[100dvh]">
       <Header />
 
-      <div className="container mx-auto max-w-2xl p-4">
-        <h1 className="text-3xl font-bold mb-2">Discover</h1>
-        <p className="text-muted-foreground mb-6">
-          See what others are building every day.
-        </p>
+      <div className="">
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-md z-10">
+          <h1 className="text-xl font-bold">Community</h1>
+        </div>
 
         {/* Loading */}
         {loading && posts.length === 0 && (
@@ -262,95 +282,98 @@ export default function CommunityPage() {
         )}
 
         {/* Feed */}
-        <div className="space-y-6">
+        <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
           {displayedPosts.map((post, i) => {
             const { checkedToday, displayStreak } = getStreakInfo(
               post.task,
-              post.update.date
+              post.update.date,
             );
 
             return (
               <div
                 key={`${post.uid}-${post.task.id}-${i}`}
-                className="rounded-2xl bg-white dark:bg-zinc-900 border shadow"
+                className="flex gap-4 p-4 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer"
               >
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={post.photoURL || "/placeholder.svg"}
-                      className="w-12 h-12 rounded-full"
-                    />
-                    <div>
-                      <div className="font-semibold">{post.name}</div>
-                      <div className="text-sm text-muted-foreground">
+                {/* Left: Avatar */}
+                <div className="flex-shrink-0">
+                  <img
+                    src={post.photoURL || "/placeholder.svg"}
+                    className="w-10 h-10 rounded-full object-cover"
+                    alt={post.name || "User"}
+                  />
+                </div>
+
+                {/* Right: Content */}
+                <div className="flex-1 min-w-0">
+                  {/* Header Row */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 overflow-hidden">
+                      <span className="font-bold text-base truncate text-zinc-900 dark:text-zinc-100">
+                        {post.name}
+                      </span>
+                      <span className="text-muted-foreground text-sm truncate">
                         {post.email}
-                      </div>
+                      </span>
+                      <span className="text-muted-foreground text-sm">·</span>
+                      <span className="text-muted-foreground text-sm hover:underline">
+                        {timeAgo(post.update.date)}
+                      </span>
+                    </div>
+
+                    {/* Follow Button */}
+                    {!post.isFriend &&
+                      !sentRequests.has(post.uid) &&
+                      user?.uid !== post.uid && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFollowRequest(post.uid);
+                          }}
+                          className="flex-shrink-0 ml-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold px-3 py-1 rounded-full hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+                        >
+                          Follow
+                        </button>
+                      )}
+                    {sentRequests.has(post.uid) && (
+                      <span className="text-xs text-muted-foreground font-medium px-2">
+                        Requested
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Post Content */}
+                  <div className="mt-1 text-base text-zinc-900 dark:text-zinc-100 whitespace-pre-wrap leading-normal">
+                    {post.update.text}
+                  </div>
+
+                  {/* Image Attachment */}
+                  {post.update.photo && (
+                    <div className="mt-3">
+                      <img
+                        src={post.update.photo}
+                        className="rounded-2xl border border-zinc-200 dark:border-zinc-700 max-h-[400px] w-auto object-cover"
+                        alt="Update attachment"
+                      />
+                    </div>
+                  )}
+
+                  {/* Footer / Context (Task & Streak) */}
+                  <div className="mt-3 flex items-center gap-4 text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-orange-600 transition-colors">
+                      <Flame
+                        className={`w-3.5 h-3.5 ${checkedToday ? "text-orange-500" : ""}`}
+                      />
+                      <span>{post.task.title}</span>
+                      <span>•</span>
+                      <span
+                        className={
+                          checkedToday ? "font-bold text-orange-600" : ""
+                        }
+                      >
+                        {displayStreak} day streak
+                      </span>
                     </div>
                   </div>
-
-                  {/* Follow */}
-                  {post.isFriend ? (
-                    <span className="px-3 py-1 rounded-full bg-green-600/10 text-green-600 text-xs font-medium">
-                      Friend
-                    </span>
-                  ) : sentRequests.has(post.uid) ? (
-                    <span className="px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-600 text-xs font-medium">
-                      Request Sent
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => handleFollowRequest(post.uid)}
-                      className="flex items-center gap-1 px-3 py-1 rounded-full bg-blue-600 text-white text-xs"
-                    >
-                      <UserPlus className="w-3 h-3" /> Follow
-                    </button>
-                  )}
-                </div>
-
-                {/* Task + streak */}
-                <div className="p-4 flex items-center justify-between">
-                  <div>
-                    <h2 className="font-bold">{post.task.title}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {post.task.reason}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <span className="text-xl font-bold text-orange-500">
-                      {displayStreak}
-                    </span>
-                    <Flame
-                      className={`w-6 h-6 ${
-                        checkedToday
-                          ? "text-orange-500 fill-orange-500"
-                          : "text-gray-400"
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                {/* Update */}
-                <div className="p-4 border-t">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      Updated on{" "}
-                      {new Date(post.update.date).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  {post.update.photo && (
-                    <img
-                      src={post.update.photo}
-                      className="w-full h-52 rounded-xl object-cover mb-3"
-                    />
-                  )}
-
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {post.update.text}
-                  </p>
                 </div>
               </div>
             );
@@ -359,8 +382,13 @@ export default function CommunityPage() {
 
         {/* Infinite Loader */}
         {lastIndexDoc.current && (
-          <div ref={observerTarget} className="py-12 text-center">
-            <Loader className="w-6 h-6 animate-spin mx-auto" />
+          <div
+            ref={observerTarget}
+            className="py-8 text-center flex justify-center"
+          >
+            {loading && (
+              <Loader className="w-5 h-5 animate-spin text-muted-foreground" />
+            )}
           </div>
         )}
       </div>

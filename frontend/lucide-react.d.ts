@@ -31,5 +31,21 @@ declare module "lucide-react" {
   export const Send: Icon;
   export const User: Icon;
   export const UserCircle: Icon;
-  // Fallback for any other icon
+  export const Coffee: Icon;
+  export const ExternalLink: Icon;
+  export const Instagram: Icon;
+  export const Youtube: Icon;
+  export const MessageSquare: Icon;
+  export const Ghost: Icon;
+  export const Linkedin: Icon;
+  export const Twitter: Icon;
+  export const Globe: Icon;
+  export const MapPin: Icon;
+  export const Github: Icon;
+  export const Settings: Icon;
+
+  export const Home: Icon;
+  export const Users: Icon;
+  export const UserPlus: Icon;
+  export const LogOut: Icon;
 }

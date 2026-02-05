@@ -467,6 +467,7 @@ export async function getMyFriends(myUid: string) {
         email: u.email || "",
         name: u.name || null,
         photoURL: u.photoURL || null,
+        username: u.username || null,
       };
     }),
   );
@@ -600,6 +601,34 @@ export async function removeFromCommunityIndex(
 
   const snap = await getDocs(qRef);
   await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+}
+
+export async function findUserByUsername(username: string) {
+  const q = query(collection(db, "users"), where("username", "==", username));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const docSnap = snap.docs[0];
+  return { uid: docSnap.id, ...docSnap.data() };
+}
+
+export async function getCommunityPostsByUser(uid: string) {
+  const q = query(
+    collection(db, "communityIndex"),
+    where("userId", "==", uid),
+    orderBy("createdAt", "desc"),
+  );
+  const snap = await getDocs(q);
+
+  const posts = await Promise.all(
+    snap.docs.map(async (d) => {
+      const { userId, taskId, historyId } = d.data();
+      const post = await getCommunityPostByReference(userId, taskId, historyId);
+      if (!post) return null;
+      return { ...post, id: d.id };
+    }),
+  );
+
+  return posts.filter(Boolean);
 }
 
 export async function getCommunityPostById(communityIndexId: string) {

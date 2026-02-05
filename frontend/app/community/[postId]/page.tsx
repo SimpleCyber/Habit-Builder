@@ -9,18 +9,16 @@ import {
   sendFriendRequest,
 } from "@/lib/firebase-db";
 import { Loader, ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import {
   CommunityPostCard,
   type CommunityPost,
 } from "@/components/community/community-post-card";
 import { toast } from "sonner";
 
-export default function SinglePostPage({
-  params,
-}: {
-  params: { postId: string };
-}) {
+export default function SinglePostPage() {
+  const params = useParams();
+  const postId = params?.postId as string;
   const { user, loading: authLoading } = useAuth();
   const [post, setPost] = useState<CommunityPost | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +30,7 @@ export default function SinglePostPage({
       if (!user) return;
       setLoading(true);
       try {
-        const data = await getCommunityPostById(params.postId);
+        const data = await getCommunityPostById(postId);
         if (data) {
           // @ts-ignore
           setPost(data);
@@ -55,8 +53,8 @@ export default function SinglePostPage({
       }
     }
 
-    if (!authLoading && user) load();
-  }, [user, authLoading, params.postId]);
+    if (!authLoading && user && postId) load();
+  }, [user, authLoading, postId]);
 
   const handleFollowRequest = async (targetUid: string) => {
     if (!user) return;
@@ -80,8 +78,6 @@ export default function SinglePostPage({
 
   return (
     <main className="min-h-screen container mx-auto max-w-md md:max-w-xl lg:max-w-2xl border-x border-zinc-200 dark:border-zinc-800 min-h-[100dvh]">
-      <Header />
-
       <div className="sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-md z-10 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-4 p-4">
           <button

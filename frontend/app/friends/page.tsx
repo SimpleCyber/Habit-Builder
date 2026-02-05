@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Users, UserPlus, ContactRound } from "lucide-react";
+import { Users, UserPlus, User } from "lucide-react";
 import { getMyFriends } from "@/lib/firebase-db";
 import { useAuth } from "@/hooks/use-auth";
-import { Header } from "@/components/layout/header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SocialLayout } from "@/components/layout/social-layout";
 
 export default function FriendsPage() {
   const { user } = useAuth();
@@ -38,17 +38,15 @@ export default function FriendsPage() {
 
   return (
     <>
-      <main className="container mx-auto max-w-md md:max-w-xl lg:max-w-2xl p-4 sm:p-6">
-        <Header />
-
+      <SocialLayout>
         {loading ? ( // ✅ Show loader while fetching
-          <div className="glass-effect rounded-2xl p-8 text-center">
+          <div className="glass-effect rounded-2xl p-8 text-center mt-8">
             <p className="text-gray-600 dark:text-gray-300">
               Loading friends...
             </p>
           </div>
         ) : friends.length != 0 ? (
-          <>
+          <div className="p-4 sm:p-6">
             <div className="text-gray-700 dark:text-gray-200 font-medium text-lg mb-3">
               Your Friends
             </div>
@@ -56,11 +54,11 @@ export default function FriendsPage() {
               {friends.map((f) => (
                 <Link
                   key={f.uid}
-                  href={`/friends/${f.uid}`}
+                  href={`/${f.username || f.uid}`}
                   className="rounded-md border border-[var(--border)] p-3 flex items-center justify-between hover:bg-[var(--glass-hover)]"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <Avatar className="h-8 w-8 flex-shrink-0">
+                    <Avatar className="h-10 w-10 flex-shrink-0">
                       <AvatarImage src={f.photoURL || ""} alt="" />
                       <AvatarFallback className="text-xs">
                         {(f.name || f.email || "?")
@@ -72,25 +70,25 @@ export default function FriendsPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">
+                      <div className="text-sm font-bold truncate text-foreground">
                         {f.name || "Unknown"}
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
-                        {f.email}
+                        @{f.username || "user"}
                       </div>
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
-          </>
+          </div>
         ) : (
-          <div className="glass-effect rounded-2xl p-8 text-center">
+          <div className="glass-effect rounded-2xl p-8 text-center mt-8">
             <Link
               href="/friends/requestrecive"
               className="flex items-center gap-2"
             >
-              <ContactRound className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+              <User className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             </Link>
             <p className="text-gray-600 dark:text-gray-300 mb-2">
               No friends yet!
@@ -100,7 +98,7 @@ export default function FriendsPage() {
             </p>
           </div>
         )}
-      </main>
+      </SocialLayout>
     </>
   );
 }

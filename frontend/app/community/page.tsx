@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Header } from "@/components/layout/header";
 import {
   getCommunityIndexPage,
   getCommunityPostByReference,
@@ -17,6 +16,7 @@ import {
   CommunityPostCard,
   type CommunityPost,
 } from "@/components/community/community-post-card";
+import { SocialLayout } from "@/components/layout/social-layout";
 
 // ---------------------------------------------------------
 // ✅ FINAL COMMUNITY PAGE USING communityIndex
@@ -64,34 +64,36 @@ export default function CommunityPage() {
       const { index, lastDoc } = await getCommunityIndexPage(POSTS_PER_LOAD);
       lastIndexDoc.current = lastDoc;
 
-      const fullPosts: CommunityPost[] = [];
+      const fullPosts = (
+        await Promise.all(
+          index.map(async (item) => {
+            const post = await getCommunityPostByReference(
+              item.userId,
+              item.taskId,
+              item.historyId,
+            );
 
-      for (const item of index) {
-        const post = await getCommunityPostByReference(
-          item.userId,
-          item.taskId,
-          item.historyId,
-        );
+            if (!post) return null;
 
-        if (!post) continue;
+            return {
+              id: item.id, // ✅ Pass the community index ID
+              uid: post.uid,
+              name: post.name,
+              username: post.username,
+              email: post.email,
+              photoURL: post.photoURL,
 
-        fullPosts.push({
-          id: item.id, // ✅ Pass the community index ID
-          uid: post.uid,
-          name: post.name,
-          username: post.username,
-          email: post.email,
-          photoURL: post.photoURL,
+              task: post.task as Task,
+              update: post.update as TaskHistoryEntry,
 
-          task: post.task as Task,
-          update: post.update as TaskHistoryEntry,
+              isFriend: friendUids.has(post.uid),
+              requestStatus: sentUids.has(post.uid) ? "sent" : "none",
 
-          isFriend: friendUids.has(post.uid),
-          requestStatus: sentUids.has(post.uid) ? "sent" : "none",
-
-          createdAt: post.createdAt,
-        });
-      }
+              createdAt: post.createdAt,
+            } as CommunityPost;
+          }),
+        )
+      ).filter((p): p is CommunityPost => p !== null);
 
       setPosts(fullPosts); // ✅ only first page, not everything
       setDisplayedPosts(fullPosts);
@@ -117,34 +119,36 @@ export default function CommunityPage() {
       );
       lastIndexDoc.current = lastDoc;
 
-      const newPosts: CommunityPost[] = [];
+      const newPosts = (
+        await Promise.all(
+          index.map(async (item) => {
+            const post = await getCommunityPostByReference(
+              item.userId,
+              item.taskId,
+              item.historyId,
+            );
 
-      for (const item of index) {
-        const post = await getCommunityPostByReference(
-          item.userId,
-          item.taskId,
-          item.historyId,
-        );
+            if (!post) return null;
 
-        if (!post) continue;
+            return {
+              id: item.id,
+              uid: post.uid,
+              name: post.name,
+              username: post.username,
+              email: post.email,
+              photoURL: post.photoURL,
 
-        newPosts.push({
-          id: item.id,
-          uid: post.uid,
-          name: post.name,
-          username: post.username,
-          email: post.email,
-          photoURL: post.photoURL,
+              task: post.task as Task,
+              update: post.update as TaskHistoryEntry,
 
-          task: post.task as Task,
-          update: post.update as TaskHistoryEntry,
+              isFriend: friends.has(post.uid),
+              requestStatus: sentRequests.has(post.uid) ? "sent" : "none",
 
-          isFriend: friends.has(post.uid),
-          requestStatus: sentRequests.has(post.uid) ? "sent" : "none",
-
-          createdAt: post.createdAt,
-        });
-      }
+              createdAt: post.createdAt,
+            } as CommunityPost;
+          }),
+        )
+      ).filter((p): p is CommunityPost => p !== null);
 
       // ✅ Append the new posts
       setPosts((prev) => [...prev, ...newPosts]);
@@ -214,9 +218,7 @@ export default function CommunityPage() {
     );
 
   return (
-    <main className="min-h-screen container mx-auto max-w-md md:max-w-xl lg:max-w-2xl border-x border-zinc-200 dark:border-zinc-800 min-h-[100dvh]">
-      <Header />
-
+    <SocialLayout>
       <div className="">
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-md z-10">
           <h1 className="text-xl font-bold">Community</h1>
@@ -261,6 +263,6 @@ export default function CommunityPage() {
           </div>
         )}
       </div>
-    </main>
+    </SocialLayout>
   );
 }

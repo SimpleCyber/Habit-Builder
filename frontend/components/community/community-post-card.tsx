@@ -205,10 +205,18 @@ export function CommunityPostCard({
       }`}
     >
       {/* Left: Avatar */}
-      <div className="flex-shrink-0">
+      <div
+        className="flex-shrink-0 cursor-pointer z-10"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (post.username) {
+            router.push(`/${post.username}`);
+          }
+        }}
+      >
         <img
           src={post.photoURL || "/placeholder.svg"}
-          className="w-10 h-10 rounded-full object-cover"
+          className="w-10 h-10 rounded-full object-cover hover:opacity-80 transition-opacity"
           alt={post.name || "User"}
         />
       </div>

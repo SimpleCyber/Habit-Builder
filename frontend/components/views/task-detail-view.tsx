@@ -113,7 +113,27 @@ export function TaskDetailView({
     try {
       let photoData: string | null = null;
       const file = fileInputRef.current?.files?.[0];
-      if (file) photoData = await compressImage(file);
+      if (file) {
+        const compressedBase64 = await compressImage(file);
+
+        try {
+          const res = await fetch("/api/cloudinary/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: compressedBase64 }),
+          });
+
+          if (!res.ok) throw new Error("Image upload failed");
+
+          const data = await res.json();
+          photoData = data.url;
+        } catch (err) {
+          console.error("Upload error:", err);
+          setFormError("Failed to upload image. Please try again.");
+          setIsSubmitting(false);
+          return;
+        }
+      }
 
       const todayISO = new Date().toISOString();
 

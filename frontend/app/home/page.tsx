@@ -181,6 +181,7 @@ export default function HomePage() {
         />
       )}
 
+      {/* ... other modals ... */}
       {showEditModal && currentTask && (
         <TaskModal
           task={currentTask}
@@ -189,7 +190,6 @@ export default function HomePage() {
         />
       )}
 
-      {/* ✅ Limit Dialog (Simple Clean) */}
       <Dialog open={showMaxTasks} onOpenChange={setShowMaxTasks}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

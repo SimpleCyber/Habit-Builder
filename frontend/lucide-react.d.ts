@@ -51,4 +51,5 @@ declare module "lucide-react" {
   export const UserSquare: Icon;
   export const UserRoundCheck: Icon;
   export const UserRoundSearch: Icon;
+  export const Search: Icon;
 }

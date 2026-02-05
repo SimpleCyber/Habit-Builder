@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react";
 import { SocialSidebar } from "./social-sidebar";
+import { RightSidebar } from "./right-sidebar";
 
 export function SocialLayout({ children }: { children: ReactNode }) {
   return (
@@ -15,10 +16,8 @@ export function SocialLayout({ children }: { children: ReactNode }) {
           {children}
         </main>
 
-        {/* Right Sidebar (Optional placeholder for future: Trends, Suggested Users) */}
-        {/* <aside className="hidden lg:block w-[350px] pl-8 py-4 space-y-4">
-           Search, Trends, Suggested 
-        </aside> */}
+        {/* Right Sidebar (Desktop) */}
+        <RightSidebar />
       </div>
     </div>
   );

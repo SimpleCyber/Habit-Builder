@@ -110,12 +110,65 @@ export default function MigratePage() {
     }
   };
 
+  const executeUsernameBackfill = async () => {
+    setLoading(true);
+    setLogs([]);
+    log("Starting username backfill...");
+
+    try {
+      const usersSnap = await getDocs(collection(db, "users"));
+      let updatedCount = 0;
+
+      for (const userDoc of usersSnap.docs) {
+        const data = userDoc.data();
+
+        if (!data.username && data.email) {
+          const newUsername = data.email
+            .split("@")[0]
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "");
+
+          log(`User ${userDoc.id} (${data.email}) has no username.`);
+          log(`  -> Setting username to: ${newUsername}`);
+
+          await updateDoc(doc(db, "users", userDoc.id), {
+            username: newUsername,
+            nameLower: (data.name || "").toLowerCase(),
+            emailLower: (data.email || "").toLowerCase(),
+          });
+
+          updatedCount++;
+        }
+      }
+
+      log(`Backfill complete. Updated ${updatedCount} users.`);
+      toast.success(`Updated ${updatedCount} users`);
+    } catch (e: any) {
+      console.error(e);
+      log(`Error: ${e.message}`);
+      toast.error("Backfill failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Migration Admin</h1>
       <Button onClick={runMigration} disabled={loading}>
         {loading && <Loader className="w-4 h-4 mr-2 animate-spin" />}
         Run Base64 to Cloudinary Migration
+      </Button>
+
+      <div className="h-4" />
+
+      <Button
+        onClick={executeUsernameBackfill}
+        disabled={loading}
+        variant="secondary"
+      >
+        {loading && <Loader className="w-4 h-4 mr-2 animate-spin" />}
+        Run Username Backfill
       </Button>
 
       <div className="mt-6 bg-zinc-100 dark:bg-zinc-900 p-4 rounded-lg font-mono text-xs h-96 overflow-y-auto">

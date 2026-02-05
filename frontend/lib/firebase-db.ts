@@ -111,6 +111,44 @@ export async function saveUserData(uid: string, data: Partial<UserData>) {
   await setDoc(doc(db, "users", uid), data, { merge: true });
 }
 
+export async function getSuggestedUsers(limitCount = 3) {
+  // 1. Get top active users (by streak) - fetch a larger pool to shuffle
+  const activeQ = query(
+    collection(db, "users"),
+    orderBy("streak", "desc"),
+    limit(10),
+  );
+
+  // 2. Also get some other users (e.g., recently created) to mix in
+  const recentQ = query(
+    collection(db, "users"),
+    orderBy("createdAt", "desc"),
+    limit(10),
+  );
+
+  const [activeSnap, recentSnap] = await Promise.all([
+    getDocs(activeQ),
+    getDocs(recentQ),
+  ]);
+
+  const userMap = new Map();
+
+  activeSnap.forEach((d) => userMap.set(d.id, { uid: d.id, ...d.data() }));
+  recentSnap.forEach((d) => userMap.set(d.id, { uid: d.id, ...d.data() }));
+
+  const combined = Array.from(userMap.values());
+
+  // Filter out incomplete profiles (missing name, username, or photoURL)
+  const completeProfiles = combined.filter(
+    (u: any) => u.name && u.username && u.photoURL,
+  );
+
+  // Shuffle implementation to provide "random" feel within the active/recent pool
+  const shuffled = completeProfiles.sort(() => 0.5 - Math.random());
+
+  return shuffled.slice(0, limitCount);
+}
+
 /* =========================================================
    ✅ TASK CRUD
 ========================================================= */
@@ -283,8 +321,12 @@ export async function sendFriendRequest(
     toUid,
     fromEmail: from?.email || "",
     fromName: from?.name || "",
+    fromUsername: from?.username || "",
+    fromPhotoURL: from?.photoURL || "",
     toEmail: to?.email || "",
     toName: to?.name || "",
+    toUsername: to?.username || "",
+    toPhotoURL: to?.photoURL || "",
     type,
     status: "pending",
     createdAt: Timestamp.now(),
@@ -300,7 +342,26 @@ export async function getReceivedRequests(myUid: string) {
     ),
   );
 
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const requests = await Promise.all(
+    snap.docs.map(async (d) => {
+      const data = d.id ? { id: d.id, ...d.data() } : { ...d.data() };
+      const req = data as any;
+
+      // Backfill missing info for legacy requests
+      if (!req.fromUsername || !req.fromPhotoURL) {
+        const fromSnap = await getDoc(doc(db, "users", req.fromUid));
+        if (fromSnap.exists()) {
+          const fromData = fromSnap.data();
+          req.fromName = req.fromName || fromData.name || "";
+          req.fromUsername = req.fromUsername || fromData.username || "";
+          req.fromPhotoURL = req.fromPhotoURL || fromData.photoURL || "";
+        }
+      }
+      return req;
+    }),
+  );
+
+  return requests;
 }
 
 interface FriendRequest {
@@ -311,9 +372,7 @@ interface FriendRequest {
   createdAt: Date;
 }
 
-export async function getOutgoingRequests(
-  myUid: string,
-): Promise<FriendRequest[]> {
+export async function getOutgoingRequests(myUid: string): Promise<any[]> {
   const q = query(
     collection(db, "friendRequests"),
     where("fromUid", "==", myUid),
@@ -321,17 +380,30 @@ export async function getOutgoingRequests(
 
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((doc) => {
-    const data = doc.data();
+  const requests = await Promise.all(
+    snapshot.docs.map(async (d) => {
+      const data = d.id ? { id: d.id, ...d.data() } : { ...d.data() };
+      const req = data as any;
 
-    return {
-      id: doc.id,
-      fromUid: data.fromUid,
-      toUid: data.toUid,
-      status: data.status,
-      createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
-    };
-  });
+      // Backfill missing info for legacy requests
+      if (!req.toUsername || !req.toPhotoURL) {
+        const toSnap = await getDoc(doc(db, "users", req.toUid));
+        if (toSnap.exists()) {
+          const toData = toSnap.data();
+          req.toName = req.toName || toData.name || "";
+          req.toUsername = req.toUsername || toData.username || "";
+          req.toPhotoURL = req.toPhotoURL || toData.photoURL || "";
+        }
+      }
+
+      return {
+        ...req,
+        createdAt: req.createdAt?.toDate?.() || new Date(req.createdAt),
+      };
+    }),
+  );
+
+  return requests;
 }
 
 export async function respondToRequest(
@@ -386,6 +458,7 @@ export async function searchUsers(term: string) {
       displayName: d.data().name || d.data().email,
       name: d.data().name,
       photoURL: d.data().photoURL,
+      username: d.data().username,
     }),
   );
 
@@ -396,6 +469,7 @@ export async function searchUsers(term: string) {
       displayName: d.data().name || d.data().email,
       name: d.data().name,
       photoURL: d.data().photoURL,
+      username: d.data().username,
     }),
   );
 

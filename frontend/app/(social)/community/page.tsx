@@ -218,7 +218,7 @@ export default function CommunityPage() {
 
   return (
     <div className="">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-md z-10">
+      <div className="p-5 border-b border-r-1 border-zinc-200 dark:border-zinc-800 sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-md z-10">
         <h1 className="text-xl font-bold">Community</h1>
       </div>
 

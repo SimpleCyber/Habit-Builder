@@ -52,4 +52,22 @@ declare module "lucide-react" {
   export const UserRoundCheck: Icon;
   export const UserRoundSearch: Icon;
   export const Search: Icon;
+  export const ChevronLeft: Icon;
+
+  export const FileText: Icon;
+  export const ShieldCheck: Icon;
+  export const Scale: Icon;
+  export const Bell: Icon;
+
+  export const Eye: Icon;
+  export const Shield: Icon;
+  export const Share2: Icon;
+  export const Lock: Icon;
+  export const Smartphone: Icon;
+
+  export const Cookie: Icon;
+  export const Info: Icon;
+  export const Settings: Icon;
+  export const ShieldAlert: Icon;
+  
 }

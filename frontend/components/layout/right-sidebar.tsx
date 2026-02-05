@@ -205,16 +205,16 @@ export function RightSidebar() {
 
       {/* Footer / Links */}
       <div className="flex flex-wrap text-xs text-muted-foreground gap-x-4 gap-y-2 px-6 pt-4 border-t border-border/30">
-        <Link href="#" className="hover:underline">
+        <Link href="/terms" className="hover:underline">
           Terms of Service
         </Link>
-        <Link href="#" className="hover:underline">
+        <Link href="/privacy" className="hover:underline">
           Privacy Policy
         </Link>
-        <Link href="#" className="hover:underline">
+        <Link href="/cookies" className="hover:underline">
           Cookie Policy
         </Link>
-        <Link href="#" className="hover:underline">
+        <Link href="/accessibility" className="hover:underline">
           Accessibility
         </Link>
         <span className="w-full mt-1 opacity-70">© 2026 Habit Builder</span>

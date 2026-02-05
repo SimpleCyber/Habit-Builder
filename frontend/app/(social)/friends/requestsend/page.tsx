@@ -20,7 +20,9 @@ export default function FriendRequestSendPage() {
   const [sent, setSent] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [friends, setFriends] = useState<any[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<Set<string>>(new Set());
+  const [pendingRequests, setPendingRequests] = useState<Set<string>>(
+    new Set(),
+  );
 
   useEffect(() => {
     const search = async () => {
@@ -84,7 +86,7 @@ export default function FriendRequestSendPage() {
       return;
     }
 
-    setPendingRequests(prev => new Set(prev).add(targetUid));
+    setPendingRequests((prev) => new Set(prev).add(targetUid));
 
     try {
       const result = await sendFriendRequest(user.uid, targetUid, "all");
@@ -102,11 +104,11 @@ export default function FriendRequestSendPage() {
       alert("Failed to send friend request");
     } finally {
       // Remove from pending set
-       setPendingRequests(prev => {
-         const next = new Set(prev);
-         next.delete(targetUid);
-         return next;
-       });
+      setPendingRequests((prev) => {
+        const next = new Set(prev);
+        next.delete(targetUid);
+        return next;
+      });
     }
   };
 
@@ -188,12 +190,12 @@ export default function FriendRequestSendPage() {
                       onClick={() => handleRequest(u.uid, u)}
                       disabled={pendingRequests.has(u.uid)}
                       className={`px-3 py-1 rounded-md flex items-center gap-1 ${
-                        pendingRequests.has(u.uid) 
-                          ? "bg-primary/50 cursor-not-allowed" 
+                        pendingRequests.has(u.uid)
+                          ? "bg-primary/50 cursor-not-allowed"
                           : "bg-primary hover:bg-primary/90"
                       } text-primary-foreground`}
                     >
-                      <UserPlus className="w-4 h-4" /> 
+                      <UserPlus className="w-4 h-4" />
                       {pendingRequests.has(u.uid) ? "Wait..." : "Request"}
                     </button>
                   )}

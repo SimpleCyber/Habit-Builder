@@ -106,7 +106,10 @@ export function UserMenu() {
 
         {username && (
           <DropdownMenuItem asChild>
-            <Link href={`/${username}`} className="flex items-center gap-2 font-bold text-orange-500">
+            <Link
+              href={`/${username}`}
+              className="flex items-center gap-2 font-bold text-orange-500"
+            >
               <UserCircle className="w-4 h-4" />
               Profile
             </Link>

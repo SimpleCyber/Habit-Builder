@@ -16,7 +16,6 @@ import {
   CommunityPostCard,
   type CommunityPost,
 } from "@/components/community/community-post-card";
-import { SocialLayout } from "@/components/layout/social-layout";
 
 // ---------------------------------------------------------
 // ✅ FINAL COMMUNITY PAGE USING communityIndex
@@ -218,51 +217,49 @@ export default function CommunityPage() {
     );
 
   return (
-    <SocialLayout>
-      <div className="">
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-md z-10">
-          <h1 className="text-xl font-bold">Community</h1>
-        </div>
-
-        {/* Loading */}
-        {loading && posts.length === 0 && (
-          <div className="flex justify-center py-12">
-            <Loader className="w-6 h-6 animate-spin" />
-          </div>
-        )}
-
-        {/* Empty */}
-        {!loading && posts.length === 0 && (
-          <div className="text-center text-muted-foreground py-12">
-            No community posts yet.
-          </div>
-        )}
-
-        {/* Feed */}
-        <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-          {displayedPosts.map((post, i) => (
-            <CommunityPostCard
-              key={`${post.uid}-${post.task.id}-${i}`}
-              post={post}
-              user={user}
-              sentRequests={sentRequests}
-              onFollowRequest={handleFollowRequest}
-            />
-          ))}
-        </div>
-
-        {/* Infinite Loader */}
-        {lastIndexDoc.current && (
-          <div
-            ref={observerTarget}
-            className="py-8 text-center flex justify-center"
-          >
-            {loading && (
-              <Loader className="w-5 h-5 animate-spin text-muted-foreground" />
-            )}
-          </div>
-        )}
+    <div className="">
+      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-md z-10">
+        <h1 className="text-xl font-bold">Community</h1>
       </div>
-    </SocialLayout>
+
+      {/* Loading */}
+      {loading && posts.length === 0 && (
+        <div className="flex justify-center py-12">
+          <Loader className="w-6 h-6 animate-spin" />
+        </div>
+      )}
+
+      {/* Empty */}
+      {!loading && posts.length === 0 && (
+        <div className="text-center text-muted-foreground py-12">
+          No community posts yet.
+        </div>
+      )}
+
+      {/* Feed */}
+      <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+        {displayedPosts.map((post, i) => (
+          <CommunityPostCard
+            key={`${post.uid}-${post.task.id}-${i}`}
+            post={post}
+            user={user}
+            sentRequests={sentRequests}
+            onFollowRequest={handleFollowRequest}
+          />
+        ))}
+      </div>
+
+      {/* Infinite Loader */}
+      {lastIndexDoc.current && (
+        <div
+          ref={observerTarget}
+          className="py-8 text-center flex justify-center"
+        >
+          {loading && (
+            <Loader className="w-5 h-5 animate-spin text-muted-foreground" />
+          )}
+        </div>
+      )}
+    </div>
   );
 }

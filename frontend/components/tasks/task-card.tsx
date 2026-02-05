@@ -21,7 +21,7 @@ export function TaskCard({ task, history, onClick, readOnly }: TaskCardProps) {
 
   const checkedToday = history.some((h) => isSameDay(new Date(h.date), today));
   const checkedYesterday = history.some((h) =>
-    isSameDay(new Date(h.date), yesterday)
+    isSameDay(new Date(h.date), yesterday),
   );
 
   const displayStreak = checkedToday || checkedYesterday ? task.streak : 0;
@@ -56,9 +56,7 @@ export function TaskCard({ task, history, onClick, readOnly }: TaskCardProps) {
           </span>
           <Flame
             className={`w-7 h-7 ${
-              checkedToday
-                ? "text-orange-500 fill-orange-500"
-                : "text-gray-400"
+              checkedToday ? "text-orange-500 fill-orange-500" : "text-gray-400"
             }`}
           />
         </div>

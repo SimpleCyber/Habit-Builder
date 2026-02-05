@@ -35,11 +35,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         setUser(firebaseUser);
         try {
-            const { getUserProfile } = await import("@/lib/firebase-db");
-            const p = await getUserProfile(firebaseUser.uid);
-            setProfile(p);
+          const { getUserProfile } = await import("@/lib/firebase-db");
+          const p = await getUserProfile(firebaseUser.uid);
+          setProfile(p);
         } catch (e) {
-            console.error("Failed to fetch profile in AuthProvider", e);
+          console.error("Failed to fetch profile in AuthProvider", e);
         }
       } else {
         setUser(null);
@@ -54,10 +54,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Force Onboarding Flow
   useEffect(() => {
     if (!loading && user && profile !== null) {
-        // If profile loaded but no username
-        if (!profile.username && pathname !== "/onboarding") {
-            router.push("/onboarding");
-        }
+      // If profile loaded but no username
+      if (!profile.username && pathname !== "/onboarding") {
+        router.push("/onboarding");
+      }
     }
   }, [user, profile, loading, pathname, router]);
 

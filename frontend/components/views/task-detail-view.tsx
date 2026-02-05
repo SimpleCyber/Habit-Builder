@@ -233,9 +233,12 @@ export function TaskDetailView({
                     value={updateText}
                     onChange={(e) => setUpdateText(e.target.value)}
                     placeholder="What did you accomplish today?"
-                    maxLength={100}
+                    maxLength={280}
                     className="w-full h-24"
                   />
+                  <div className="text-right text-xs text-muted-foreground mt-1">
+                    {updateText.length} / 280
+                  </div>
 
                   <input
                     ref={fileInputRef}

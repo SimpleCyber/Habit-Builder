@@ -15,6 +15,9 @@ import {
   startAfter,
   Timestamp,
   deleteDoc,
+  arrayUnion,
+  arrayRemove,
+  increment,
   QueryDocumentSnapshot,
   type DocumentSnapshot,
 } from "firebase/firestore";
@@ -599,6 +602,17 @@ export async function removeFromCommunityIndex(
   await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
 }
 
+export async function getCommunityPostById(communityIndexId: string) {
+  const indexDoc = await getDoc(doc(db, "communityIndex", communityIndexId));
+  if (!indexDoc.exists()) return null;
+
+  const { userId, taskId, historyId } = indexDoc.data();
+  const post = await getCommunityPostByReference(userId, taskId, historyId);
+  if (!post) return null;
+
+  return { ...post, id: communityIndexId };
+}
+
 /**
  * Paginated index fetch (IDs only)
  */
@@ -657,19 +671,132 @@ export async function getCommunityPostByReference(
   return {
     uid: userId,
     name: user?.name || null,
+    username: user?.username || null, // ✅ Updated
     email: user?.email || "",
     photoURL: user?.photoURL || null,
     task,
-    update,
+    update: {
+      id: histSnap.id, // ✅ Added ID from snapshot
+      ...update,
+      likes: update?.likes || [],
+      commentsCount: update?.commentsCount || 0,
+    },
     createdAt: update?.date || "", // ISO string from your history entry
   };
+}
+
+/* =========================================================
+   ✅ COMMUNITY INTERACTIONS (Likes & Comments)
+   ========================================================= */
+
+export async function toggleCommunityPostLike(
+  postOwnerUid: string,
+  taskId: string,
+  historyId: string,
+  myUid: string,
+  isLiked: boolean,
+) {
+  const ref = doc(
+    db,
+    "users",
+    postOwnerUid,
+    "tasks",
+    taskId,
+    "history",
+    historyId,
+  );
+  if (isLiked) {
+    // If currently liked, we want to UNLIKE -> remove from array
+    await updateDoc(ref, {
+      likes: arrayRemove(myUid),
+    });
+  } else {
+    // If not liked, we want to LIKE -> add to array
+    await updateDoc(ref, {
+      likes: arrayUnion(myUid),
+    });
+  }
+}
+
+export async function addCommunityPostComment(
+  postOwnerUid: string,
+  taskId: string,
+  historyId: string,
+  commentData: {
+    uid: string;
+    text: string;
+    username?: string;
+    photoURL?: string;
+  },
+) {
+  // 1. Add comment to subcollection
+  const commentsRef = collection(
+    db,
+    "users",
+    postOwnerUid,
+    "tasks",
+    taskId,
+    "history",
+    historyId,
+    "comments",
+  );
+
+  await addDoc(commentsRef, {
+    ...commentData,
+    createdAt: Timestamp.now(),
+  });
+
+  // 2. Increment comment count on parent doc
+  const parentRef = doc(
+    db,
+    "users",
+    postOwnerUid,
+    "tasks",
+    taskId,
+    "history",
+    historyId,
+  );
+
+  await updateDoc(parentRef, {
+    commentsCount: increment(1),
+  });
+}
+
+export async function getCommunityPostComments(
+  postOwnerUid: string,
+  taskId: string,
+  historyId: string,
+) {
+  if (!postOwnerUid || !taskId || !historyId) return []; // ✅ Safety check
+
+  const commentsRef = collection(
+    db,
+    "users",
+    postOwnerUid,
+    "tasks",
+    taskId,
+    "history",
+    historyId,
+    "comments",
+  );
+
+  const q = query(commentsRef, orderBy("createdAt", "asc"));
+  const snap = await getDocs(q);
+
+  return snap.docs.map((d) => ({
+    id: d.id,
+    ...d.data(),
+    createdAt: (d.data().createdAt as Timestamp).toDate(),
+  }));
 }
 
 /* =========================================================
    ✅ USERNAME SYSTEM
    ========================================================= */
 
-export async function checkUsernameAvailable(username: string): Promise<boolean> {
+export async function checkUsernameAvailable(
+  username: string,
+): Promise<boolean> {
   const cleanUsername = username.toLowerCase().trim();
   if (cleanUsername.length < 3) return false;
 
@@ -680,7 +807,7 @@ export async function checkUsernameAvailable(username: string): Promise<boolean>
 
 export async function claimUsername(uid: string, username: string) {
   const cleanUsername = username.toLowerCase().trim();
-  
+
   // 1. Check availability again (safety)
   const usernameRef = doc(db, "usernames", cleanUsername);
   const userRef = doc(db, "users", uid);
@@ -695,9 +822,9 @@ export async function claimUsername(uid: string, username: string) {
   await setDoc(usernameRef, { uid });
 
   // 3. Update user profile
-  await updateDoc(userRef, { 
+  await updateDoc(userRef, {
     username: username, // Display version
-    usernameLower: cleanUsername // Search/Index version
+    usernameLower: cleanUsername, // Search/Index version
   });
 }
 

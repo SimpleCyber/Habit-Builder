@@ -26,5 +26,10 @@ declare module "lucide-react" {
   export const NewspaperIcon: Icon;
   export const Loader: Icon;
   export const Flame: Icon;
+  export const Heart: Icon;
+  export const MessageCircle: Icon;
+  export const Send: Icon;
+  export const User: Icon;
+  export const UserCircle: Icon;
   // Fallback for any other icon
 }

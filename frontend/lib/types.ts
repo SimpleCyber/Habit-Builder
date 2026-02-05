@@ -18,6 +18,8 @@ export interface TaskHistoryEntry {
   text: string;
   photo: string | null; // BASE64 ✅
   communityPosts?: boolean;
+  likes?: string[]; // Array of UIDs
+  commentsCount?: number;
   timestamp: Date;
 }
 

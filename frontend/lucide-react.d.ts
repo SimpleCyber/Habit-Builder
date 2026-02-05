@@ -48,4 +48,7 @@ declare module "lucide-react" {
   export const Users: Icon;
   export const UserPlus: Icon;
   export const LogOut: Icon;
+  export const UserSquare: Icon;
+  export const UserRoundCheck: Icon;
+  export const UserRoundSearch: Icon;
 }

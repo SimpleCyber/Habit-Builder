@@ -25,6 +25,7 @@ import {
   MessageSquare,
   Ghost,
   UserCircle,
+  Loader,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -131,11 +132,8 @@ export default function PublicProfilePage() {
 
   if (loading)
     return (
-      <div className="min-h-screen bg-white dark:bg-[#0A0A0A] flex items-center justify-center transition-colors duration-300">
-        <div className="animate-pulse flex flex-col items-center">
-          <Coffee className="w-12 h-12 text-gray-200 dark:text-gray-800 mb-4 animate-bounce" />
-          <div className="h-4 w-32 bg-gray-200 dark:bg-gray-800 rounded"></div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader className="w-8 h-8 animate-spin" />
       </div>
     );
 

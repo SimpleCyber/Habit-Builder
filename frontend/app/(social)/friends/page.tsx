@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Users, UserPlus, User } from "lucide-react";
+import { Users, UserPlus, User, Loader } from "lucide-react";
 import { getMyFriends } from "@/lib/firebase-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -42,14 +42,12 @@ export default function FriendsPage() {
       </div>
 
       {loading ? ( // ✅ Show loader while fetching
-        <div className="glass-effect rounded-2xl p-8 text-center mt-8">
-          <p className="text-gray-600 dark:text-gray-300">Loading friends...</p>
+        <div className="flex justify-center py-12">
+          <Loader className="w-6 h-6 animate-spin" />
         </div>
       ) : friends.length != 0 ? (
         <div className="p-4 sm:p-6">
-          <div className="text-gray-700 dark:text-gray-200 font-medium text-lg mb-3">
-            Your Friends
-          </div>
+          <div className="text-gray-700 dark:text-gray-200 font-medium text-lg mb-3"></div>
           <div className="grid md:grid-cols-1 lg:grid-cols-1 gap-3">
             {friends.map((f) => (
               <Link

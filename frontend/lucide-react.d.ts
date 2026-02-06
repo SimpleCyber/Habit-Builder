@@ -27,6 +27,7 @@ declare module "lucide-react" {
   export const Loader: Icon;
   export const Smile: Icon;
   export const Sticker: Icon;
+  export const Newspaper: Icon;
   export const Moon: Icon;
   export const Sun: Icon;
   export const Monitor: Icon;

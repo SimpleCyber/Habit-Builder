@@ -3,6 +3,12 @@ export const compressImage = (file: File): Promise<string> => {
     const reader = new FileReader();
 
     reader.onload = (e) => {
+      // If it's a GIF, don't compress via canvas as it strips animation
+      if (file.type === "image/gif") {
+        resolve(e.target?.result as string);
+        return;
+      }
+
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");

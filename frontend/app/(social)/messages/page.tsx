@@ -239,14 +239,56 @@ export default function MessagesPage() {
 
   const loadGifs = async (query: string = "") => {
     try {
+      // User's Giphy API key
+      const GIPHY_KEY = "dftxcMjKgyHGzJ7h26ddlkrKMxMq0S7W";
       const endpoint = query
-        ? `https://tenor.googleapis.com/v2/search?q=${query}&key=LIVDSRZULEUB&limit=12`
-        : `https://tenor.googleapis.com/v2/featured?key=LIVDSRZULEUB&limit=12`;
+        ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_KEY}&q=${query}&limit=12`
+        : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_KEY}&limit=12`;
+
       const res = await fetch(endpoint);
       const data = await res.json();
-      setGifs(data.results || []);
+
+      if (data.data) {
+        setGifs(
+          data.data.map((item: any) => ({
+            id: item.id,
+            url: item.images.original.url,
+            preview: item.images.fixed_height_small.url,
+            title: item.title,
+          })),
+        );
+      } else {
+        throw new Error("No data from Giphy");
+      }
     } catch (error) {
       console.error("Failed to fetch GIFs:", error);
+      // Fallback curated GIFs if API fails
+      setGifs([
+        {
+          id: "1",
+          url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqJmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxx8A3A8L7C/giphy.gif",
+          preview: "https://media.giphy.com/media/3o7TKMGpxx8A3A8L7C/giphy.gif",
+          title: "Party",
+        },
+        {
+          id: "2",
+          url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqJmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/l0HlBO7eyWzSZ2hZS/giphy.gif",
+          preview: "https://media.giphy.com/media/l0HlBO7eyWzSZ2hZS/giphy.gif",
+          title: "Dance",
+        },
+        {
+          id: "3",
+          url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqJmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKVUn7iM8FMEU24/giphy.gif",
+          preview: "https://media.giphy.com/media/3o7TKVUn7iM8FMEU24/giphy.gif",
+          title: "Wow",
+        },
+        {
+          id: "4",
+          url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqZ2dqJmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/l41lTfM77S0mF1gbu/giphy.gif",
+          preview: "https://media.giphy.com/media/l41lTfM77S0mF1gbu/giphy.gif",
+          title: "Chill",
+        },
+      ]);
     }
   };
 
@@ -282,8 +324,13 @@ export default function MessagesPage() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* List Column */}
-      <div className="w-full md:w-[400px] flex flex-col border-r border-zinc-200 dark:border-zinc-800 shrink-0">
+      {/* List Column - Hidden on mobile when chat is selected */}
+      <div
+        className={cn(
+          "w-full md:w-[400px] flex flex-col border-r border-zinc-200 dark:border-zinc-800 shrink-0",
+          selectedConvId ? "hidden md:flex" : "flex",
+        )}
+      >
         <div className="p-4 flex items-center justify-between">
           {isStartingNewChat ? (
             <div className="flex items-center gap-4">
@@ -406,13 +453,22 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      {/* Chat Column */}
-      <div className="flex-1 flex flex-col min-w-0 bg-background">
+      {/* Chat Column - Full width on mobile when selected */}
+      <div
+        className={cn(
+          "flex-1 flex flex-col min-w-0 bg-background",
+          selectedConvId ? "flex" : "hidden md:flex",
+        )}
+      >
         {selectedConvId ? (
           <>
             {/* Chat Header */}
             <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-10">
               <div className="flex items-center gap-3">
+                <ArrowLeft
+                  className="w-5 h-5 cursor-pointer text-zinc-500 hover:text-foreground transition-colors md:hidden"
+                  onClick={() => setSelectedConvId(null)}
+                />
                 <Avatar className="w-8 h-8">
                   <AvatarImage src={chatPartner?.photoURL || ""} />
                   <AvatarFallback>{chatPartner?.name?.[0]}</AvatarFallback>
@@ -602,11 +658,9 @@ export default function MessagesPage() {
                           {gifs.map((gif) => (
                             <img
                               key={gif.id}
-                              src={gif.media_formats.tinygif.url}
-                              alt={gif.content_description}
-                              onClick={() =>
-                                handleGifSelect(gif.media_formats.gif.url)
-                              }
+                              src={gif.preview}
+                              alt={gif.title}
+                              onClick={() => handleGifSelect(gif.url)}
                               className="w-full h-24 object-cover rounded-xl cursor-pointer hover:opacity-80 transition-opacity"
                             />
                           ))}

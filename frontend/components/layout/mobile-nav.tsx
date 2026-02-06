@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Newspaper, User, Plus, Users } from "lucide-react";
+import { Home, Newspaper, Mail, Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -15,7 +15,7 @@ export function MobileNav({ onAddClick }: MobileNavProps) {
     { icon: Home, label: "Home", href: "/home" },
     { icon: Users, label: "Friends", href: "/friends" },
     { icon: Newspaper, label: "Community", href: "/community" },
-    { icon: User, label: "Profile", href: "/profile" },
+    { icon: Mail, label: "Messages", href: "/messages" },
   ];
 
   return (

@@ -9,6 +9,7 @@ import { Toaster } from "sonner";
 import HelpDeckWidget from "@/components/layout/HelpDeckWidget";
 import { ClientLayout } from "@/components/layout/client-layout";
 import { TasksProvider } from "@/hooks/use-tasks-context";
+import { FlejetProvider } from "@/hooks/use-flejet";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -54,8 +55,10 @@ export default function RootLayout({
           >
             <AuthProvider>
               <TasksProvider>
-                <ClientLayout>{children}</ClientLayout>
-                <HelpDeckWidget />
+                <FlejetProvider>
+                  <ClientLayout>{children}</ClientLayout>
+                  <HelpDeckWidget />
+                </FlejetProvider>
               </TasksProvider>
             </AuthProvider>
           </ThemeProvider>

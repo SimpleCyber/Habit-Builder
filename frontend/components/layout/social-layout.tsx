@@ -1,24 +1,3 @@
-"use client";
-
-import { ReactNode } from "react";
-import { SocialSidebar } from "./social-sidebar";
-import { RightSidebar } from "./right-sidebar";
-
-export function SocialLayout({ children }: { children: ReactNode }) {
-  return (
-    <div className="min-h-screen bg-background text-foreground flex justify-center">
-      <div className="flex w-full max-w-[1265px]">
-        {/* Sidebar (Desktop) */}
-        <SocialSidebar />
-
-        {/* Main Content */}
-        <main className="flex-1 min-w-0 w-full max-w-2xl border-x border-zinc-200 dark:border-zinc-800 min-h-screen">
-          {children}
-        </main>
-
-        {/* Right Sidebar (Desktop) */}
-        <RightSidebar />
-      </div>
-    </div>
-  );
+export function SocialLayout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
 }

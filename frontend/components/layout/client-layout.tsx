@@ -5,6 +5,9 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import React from "react";
 import { useAppBadge } from "@/hooks/use-app-badge";
 
+import { SocialSidebar } from "@/components/layout/social-sidebar";
+import { RightSidebar } from "@/components/layout/right-sidebar";
+
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -12,16 +15,15 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   // Badge count management
   useAppBadge();
 
-  // Pages where MobileNav should be visible
-  const showMobileNav =
-    pathname === "/home" ||
+  // Pages where MobileNav and Sidebars should be visible
+  const isSocialPage =
     pathname === "/community" ||
     pathname === "/friends" ||
     pathname === "/profile" ||
     (pathname.startsWith("/") &&
       pathname.length > 1 &&
-      !["/auth", "/onboarding", "/_next", "/api"].some((p) =>
-        pathname.startsWith(p),
+      !["/auth", "/onboarding", "/_next", "/api", "/settings", "/home"].some(
+        (p) => pathname.startsWith(p),
       ) &&
       !pathname.includes("."));
 
@@ -33,14 +35,25 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     }
   };
 
+  if (!isSocialPage) {
+    return <main className="min-h-[100dvh] pb-24 lg:pb-0">{children}</main>;
+  }
+
   return (
-    <>
-      <main
-        className={`min-h-[100dvh] ${showMobileNav ? "pb-32" : "pb-24"} lg:pb-0`}
-      >
-        {children}
-      </main>
-      {showMobileNav && <MobileNav onAddClick={handleAddClick} />}
-    </>
+    <div className="min-h-screen bg-background text-foreground flex justify-center">
+      <div className="flex w-full max-w-[1265px]">
+        {/* Sidebar (Desktop) */}
+        <SocialSidebar />
+
+        {/* Main Content */}
+        <main className="flex-1 min-w-0 w-full max-w-2xl border-x border-zinc-200 dark:border-zinc-800 min-h-screen pb-32 lg:pb-0">
+          {children}
+        </main>
+
+        {/* Right Sidebar (Desktop) */}
+        <RightSidebar />
+      </div>
+      <MobileNav onAddClick={handleAddClick} />
+    </div>
   );
 }

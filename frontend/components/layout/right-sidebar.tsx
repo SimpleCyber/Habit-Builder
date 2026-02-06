@@ -26,16 +26,21 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { UserData } from "@/lib/types";
+import { useFlejet } from "@/hooks/use-flejet";
 
 export function RightSidebar() {
   const { user } = useAuth();
   const router = useRouter();
+  const {
+    flejetInfo,
+    isFlejetLoading,
+    refreshFlejet,
+    disconnectFlejet,
+    userData,
+  } = useFlejet();
   const [topUsers, setTopUsers] = useState<any[]>([]);
   const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [wsLoading, setWsLoading] = useState(true);
-  const [flejetInfo, setFlejetInfo] = useState<any>(null);
-  const [isFlejetLoading, setIsFlejetLoading] = useState(false);
+  const [wsLoading, setWsLoading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -48,19 +53,12 @@ export function RightSidebar() {
     });
 
     if (user) {
-      setWsLoading(true);
-      Promise.all([getOutgoingRequests(user.uid), getUserData(user.uid)]).then(
-        ([reqs, data]) => {
-          const sent = new Set(
-            reqs.filter((r) => r.status === "pending").map((r) => r.toUid),
-          );
-          setSentRequests(sent);
-          setUserData(data);
-          setWsLoading(false);
-        },
-      );
-    } else {
-      setWsLoading(false);
+      getOutgoingRequests(user.uid).then((reqs) => {
+        const sent = new Set(
+          reqs.filter((r) => r.status === "pending").map((r) => r.toUid),
+        );
+        setSentRequests(sent);
+      });
     }
   }, [user]);
 
@@ -86,63 +84,12 @@ export function RightSidebar() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
-  // Fetch Flejet Info
-  useEffect(() => {
-    const config = userData?.flejetConfig;
-    if (config) {
-      const fetchFlejetInfo = async () => {
-        setIsFlejetLoading(true);
-        try {
-          const { workspaceId, apiKey, userId } = config;
-          const params = new URLSearchParams({
-            workspaceId,
-            apiKey,
-            userId,
-          });
-          const res = await fetch(
-            `https://flejet.vercel.app/api/external/info?${params.toString()}`,
-          );
-          if (res.ok) {
-            const data = await res.json();
-            setFlejetInfo(data);
-          }
-        } catch (error) {
-          console.error("Failed to fetch Flejet info:", error);
-        } finally {
-          setIsFlejetLoading(false);
-        }
-      };
-
-      fetchFlejetInfo();
-    }
-  }, [userData?.flejetConfig]);
-
   const handleRefreshFlejet = async () => {
-    const config = userData?.flejetConfig;
-    if (!config || isFlejetLoading) return;
-
-    setIsFlejetLoading(true);
-    try {
-      const { workspaceId, apiKey, userId } = config;
-      const params = new URLSearchParams({ workspaceId, apiKey, userId });
-      const res = await fetch(
-        `https://flejet.vercel.app/api/external/info?${params.toString()}`,
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setFlejetInfo(data);
-        toast.success("Flejet data updated");
-      }
-    } catch (error) {
-      console.error("Failed to refresh Flejet info:", error);
-      toast.error("Failed to refresh Flejet");
-    } finally {
-      setIsFlejetLoading(false);
-    }
+    await refreshFlejet();
   };
 
   const handleDisconnect = async () => {
-    if (!user || wsLoading) return;
+    if (!user) return;
     if (
       !confirm(
         "Are you sure you want to disconnect from Flejet? This will remove your automation settings.",
@@ -150,17 +97,11 @@ export function RightSidebar() {
     )
       return;
 
-    setWsLoading(true);
     try {
-      await disconnectFromFlejet(user.uid);
-      setUserData((prev) => (prev ? { ...prev, flejetConfig: null } : null));
-      setFlejetInfo(null);
+      await disconnectFlejet();
       toast.success("Disconnected from Flejet");
     } catch (error) {
-      console.error("Failed to disconnect:", error);
       toast.error("Failed to disconnect");
-    } finally {
-      setWsLoading(false);
     }
   };
 

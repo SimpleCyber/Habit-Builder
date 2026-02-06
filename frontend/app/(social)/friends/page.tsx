@@ -8,6 +8,7 @@ import {
   getReceivedRequests,
   getOutgoingRequests,
   respondToRequest,
+  unfollowUser,
 } from "@/lib/firebase-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -67,6 +68,18 @@ export default function FriendsPage() {
     }
   };
 
+  const handleUnfollow = async (friendUid: string) => {
+    if (!user) return;
+    try {
+      await unfollowUser(user.uid, friendUid);
+      toast.success("Unfollowed successfully");
+      setFriends((prev) => prev.filter((f) => f.uid !== friendUid));
+    } catch (error) {
+      console.error("Unfollow error:", error);
+      toast.error("Failed to unfollow");
+    }
+  };
+
   if (!user) {
     return (
       <div className="p-8 text-center text-muted-foreground">
@@ -115,26 +128,38 @@ export default function FriendsPage() {
             {friends.length > 0 ? (
               <div className="divide-y divide-border">
                 {friends.map((f) => (
-                  <Link
+                  <div
                     key={f.uid}
-                    href={`/${f.username || f.uid}`}
-                    className="p-4 flex items-center gap-3 hover:bg-secondary/30 transition-colors"
+                    className="p-4 flex items-center justify-between hover:bg-secondary/30 transition-colors group"
                   >
-                    <Avatar className="h-12 w-12 border border-border">
-                      <AvatarImage src={f.photoURL} alt={f.name} />
-                      <AvatarFallback>
-                        {(f.name?.[0] || "?").toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <div className="font-bold text-base truncate">
-                        {f.name || "Unknown User"}
+                    <Link
+                      href={`/${f.username || f.uid}`}
+                      className="flex items-center gap-3 min-w-0 flex-1"
+                    >
+                      <Avatar className="h-12 w-12 border border-border">
+                        <AvatarImage src={f.photoURL} alt={f.name} />
+                        <AvatarFallback>
+                          {(f.name?.[0] || "?").toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <div className="font-bold text-base truncate">
+                          {f.name || "Unknown User"}
+                        </div>
+                        <div className="text-sm text-muted-foreground truncate">
+                          @{f.username || "user"}
+                        </div>
                       </div>
-                      <div className="text-sm text-muted-foreground truncate">
-                        @{f.username || "user"}
-                      </div>
-                    </div>
-                  </Link>
+                    </Link>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="rounded-full px-4 font-bold transition-opacity"
+                      onClick={() => handleUnfollow(f.uid)}
+                    >
+                      Following
+                    </Button>
+                  </div>
                 ))}
               </div>
             ) : (

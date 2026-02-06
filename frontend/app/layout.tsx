@@ -33,23 +33,32 @@ export const metadata: Metadata = {
   },
 };
 
+import { ThemeProvider } from "@/components/theme-provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased selection:bg-primary/10 overflow-x-hidden`}
       >
         <Suspense fallback={<div>Loading...</div>}>
-          <AuthProvider>
-            <TasksProvider>
-              <ClientLayout>{children}</ClientLayout>
-              <HelpDeckWidget />
-            </TasksProvider>
-          </AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <AuthProvider>
+              <TasksProvider>
+                <ClientLayout>{children}</ClientLayout>
+                <HelpDeckWidget />
+              </TasksProvider>
+            </AuthProvider>
+          </ThemeProvider>
         </Suspense>
         <Analytics />
         <Toaster position="bottom-right" />

@@ -56,6 +56,7 @@ export interface UserData {
   username?: string | null;
   bio?: string | null;
   location?: string | null;
+  photoURL?: string | null;
   socialLinks?: Record<string, string>;
   flejetConfig?: {
     workspaceId: string;
@@ -558,6 +559,29 @@ export async function getMyFriends(myUid: string) {
     }),
   );
   return users;
+}
+
+export async function unfollowUser(myUid: string, friendUid: string) {
+  // Find "accepted" request from me to them
+  const q1 = query(
+    collection(db, "friendRequests"),
+    where("fromUid", "==", myUid),
+    where("toUid", "==", friendUid),
+    where("status", "==", "accepted"),
+  );
+
+  // Find "accepted" request from them to me
+  const q2 = query(
+    collection(db, "friendRequests"),
+    where("fromUid", "==", friendUid),
+    where("toUid", "==", myUid),
+    where("status", "==", "accepted"),
+  );
+
+  const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+
+  const deletes = [...s1.docs, ...s2.docs].map((d) => deleteDoc(d.ref));
+  await Promise.all(deletes);
 }
 
 export async function getUserProfile(uid: string) {

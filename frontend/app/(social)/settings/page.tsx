@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,15 @@ import {
   User,
   ArrowLeft,
   Loader,
+  Moon,
+  Sun,
+  Monitor,
+  Palette,
+  Camera,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { compressImage } from "@/lib/image-utils";
+import { useTheme } from "next-themes";
 import { getUserData, saveUserData, getUserProfile } from "@/lib/firebase-db";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -34,12 +42,15 @@ const SOCIAL_PLATFORMS = [
 
 export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { theme, setTheme } = useTheme();
   const router = useRouter();
 
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [location, setLocation] = useState("");
+  const [photoURL, setPhotoURL] = useState("");
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,6 +64,7 @@ export default function SettingsPage() {
           setName(profile.name || "");
           setBio(profile.bio || "");
           setLocation(profile.location || "");
+          setPhotoURL(profile.photoURL || "");
           setSocialLinks(profile.socialLinks || {});
         }
       } catch (err) {
@@ -76,6 +88,31 @@ export default function SettingsPage() {
     setSocialLinks((prev) => ({ ...prev, [platform]: value }));
   };
 
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsSubmitting(true);
+    try {
+      const compressedBase64 = await compressImage(file);
+      const res = await fetch("/api/cloudinary/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: compressedBase64 }),
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      setPhotoURL(data.url);
+      toast.success("Image uploaded!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload image");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setIsSubmitting(true);
@@ -84,6 +121,7 @@ export default function SettingsPage() {
         name,
         bio,
         location,
+        photoURL,
         socialLinks,
       });
       toast.success("Profile updated!");
@@ -121,6 +159,38 @@ export default function SettingsPage() {
               <User className="w-5 h-5" /> Basic Info
             </h2>
 
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="relative group">
+                <Avatar className="w-24 h-24 rounded-2xl border-2 border-border">
+                  <AvatarImage src={photoURL} className="object-cover" />
+                  <AvatarFallback className="text-2xl font-bold bg-muted">
+                    {name?.[0] || user?.email?.[0]?.toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 bg-black/40 text-white rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Camera className="w-6 h-6" />
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="h-8"
+              >
+                Change Photo
+              </Button>
+            </div>
+
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Name</label>
@@ -156,6 +226,34 @@ export default function SettingsPage() {
                   {bio.length} characters
                 </p>
               </div>
+            </div>
+          </section>
+
+          {/* Appearance Section */}
+          <section className="space-y-6 bg-card p-6 rounded-2xl border shadow-sm">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Palette className="w-5 h-5" /> Appearance
+            </h2>
+
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { id: "light", label: "Light", icon: Sun },
+                { id: "dark", label: "Dark", icon: Moon },
+                { id: "system", label: "System", icon: Monitor },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTheme(t.id)}
+                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all gap-2 ${
+                    theme === t.id
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border hover:border-muted-foreground/30 bg-transparent text-muted-foreground"
+                  }`}
+                >
+                  <t.icon className="w-6 h-6" />
+                  <span className="text-sm font-bold">{t.label}</span>
+                </button>
+              ))}
             </div>
           </section>
 

@@ -69,5 +69,8 @@ declare module "lucide-react" {
   export const Info: Icon;
   export const Settings: Icon;
   export const ShieldAlert: Icon;
+
+  export const Loader2: Icon;
+  export const CheckCircle2: Icon;
   
 }

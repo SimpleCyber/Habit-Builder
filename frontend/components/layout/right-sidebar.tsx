@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, Flame, UserPlus, Check } from "lucide-react";
+import {
+  Search,
+  Flame,
+  Twitter,
+  Calendar,
+  History as HistoryIcon,
+  Loader2,
+  LogOut,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -11,16 +19,23 @@ import {
   sendFriendRequest,
   getOutgoingRequests,
   searchUsers,
+  getUserData,
+  disconnectFromFlejet,
 } from "@/lib/firebase-db";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import type { UserData } from "@/lib/types";
 
 export function RightSidebar() {
   const { user } = useAuth();
   const router = useRouter();
   const [topUsers, setTopUsers] = useState<any[]>([]);
   const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [wsLoading, setWsLoading] = useState(true);
+  const [flejetInfo, setFlejetInfo] = useState<any>(null);
+  const [isFlejetLoading, setIsFlejetLoading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -33,12 +48,19 @@ export function RightSidebar() {
     });
 
     if (user) {
-      getOutgoingRequests(user.uid).then((reqs) => {
-        const sent = new Set(
-          reqs.filter((r) => r.status === "pending").map((r) => r.toUid),
-        );
-        setSentRequests(sent);
-      });
+      setWsLoading(true);
+      Promise.all([getOutgoingRequests(user.uid), getUserData(user.uid)]).then(
+        ([reqs, data]) => {
+          const sent = new Set(
+            reqs.filter((r) => r.status === "pending").map((r) => r.toUid),
+          );
+          setSentRequests(sent);
+          setUserData(data);
+          setWsLoading(false);
+        },
+      );
+    } else {
+      setWsLoading(false);
     }
   }, [user]);
 
@@ -63,6 +85,84 @@ export function RightSidebar() {
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
+
+  // Fetch Flejet Info
+  useEffect(() => {
+    const config = userData?.flejetConfig;
+    if (config) {
+      const fetchFlejetInfo = async () => {
+        setIsFlejetLoading(true);
+        try {
+          const { workspaceId, apiKey, userId } = config;
+          const params = new URLSearchParams({
+            workspaceId,
+            apiKey,
+            userId,
+          });
+          const res = await fetch(
+            `https://flejet.vercel.app/api/external/info?${params.toString()}`,
+          );
+          if (res.ok) {
+            const data = await res.json();
+            setFlejetInfo(data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch Flejet info:", error);
+        } finally {
+          setIsFlejetLoading(false);
+        }
+      };
+
+      fetchFlejetInfo();
+    }
+  }, [userData?.flejetConfig]);
+
+  const handleRefreshFlejet = async () => {
+    const config = userData?.flejetConfig;
+    if (!config || isFlejetLoading) return;
+
+    setIsFlejetLoading(true);
+    try {
+      const { workspaceId, apiKey, userId } = config;
+      const params = new URLSearchParams({ workspaceId, apiKey, userId });
+      const res = await fetch(
+        `https://flejet.vercel.app/api/external/info?${params.toString()}`,
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setFlejetInfo(data);
+        toast.success("Flejet data updated");
+      }
+    } catch (error) {
+      console.error("Failed to refresh Flejet info:", error);
+      toast.error("Failed to refresh Flejet");
+    } finally {
+      setIsFlejetLoading(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!user || wsLoading) return;
+    if (
+      !confirm(
+        "Are you sure you want to disconnect from Flejet? This will remove your automation settings.",
+      )
+    )
+      return;
+
+    setWsLoading(true);
+    try {
+      await disconnectFromFlejet(user.uid);
+      setUserData((prev) => (prev ? { ...prev, flejetConfig: null } : null));
+      setFlejetInfo(null);
+      toast.success("Disconnected from Flejet");
+    } catch (error) {
+      console.error("Failed to disconnect:", error);
+      toast.error("Failed to disconnect");
+    } finally {
+      setWsLoading(false);
+    }
+  };
 
   const handleFollow = async (targetUid: string) => {
     if (!user) {
@@ -201,6 +301,154 @@ export function RightSidebar() {
             )}
           </div>
         </div>
+
+        {/* Connect to Flejet (Twitter Automation) */}
+        {!wsLoading && !userData?.flejetConfig && (
+          <div className="bg-primary/5 rounded-2xl border-2 border-primary/20 p-6 space-y-4 shadow-xl shadow-primary/5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+                <Twitter className="text-white" fill="currentColor" size={20} />
+              </div>
+              <h3 className="font-bold text-lg leading-none tracking-tight">
+                Post to X Automatically
+              </h3>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Connect your Flejet workspace to schedule and post your daily wins
+              effortlessly.
+            </p>
+            <Button
+              onClick={() =>
+                window.open(
+                  "https://flejet.vercel.app/integrate/habit-builder",
+                  "_blank",
+                )
+              }
+              className="w-full rounded-xl font-bold h-11 shadow-lg shadow-primary/10"
+            >
+              Connect Flejet
+            </Button>
+          </div>
+        )}
+
+        {/* Flejet Scheduled Posts & Status */}
+        {userData?.flejetConfig && (
+          <div className="bg-secondary/30 rounded-2xl border border-border overflow-hidden">
+            <div className="p-4 border-b border-border/50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Twitter className="w-4 h-4 text-primary" fill="currentColor" />
+                <h2 className="font-bold text-base leading-none">
+                  Flejet Updates
+                </h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRefreshFlejet}
+                  disabled={isFlejetLoading}
+                  className="p-1.5 hover:bg-primary/10 rounded-lg text-muted-foreground hover:text-primary transition-all disabled:opacity-50"
+                  title="Refresh status"
+                >
+                  <Loader2
+                    className={`w-3.5 h-3.5 ${isFlejetLoading ? "animate-spin" : ""}`}
+                  />
+                </button>
+                <button
+                  onClick={handleDisconnect}
+                  disabled={wsLoading}
+                  className="p-1.5 hover:bg-rose-500/10 rounded-lg text-muted-foreground hover:text-rose-500 transition-all disabled:opacity-50"
+                  title="Disconnect Flejet"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+                {flejetInfo?.status?.credits !== undefined && (
+                  <div className="bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    {flejetInfo.status.credits} Credits
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {isFlejetLoading ? (
+                <div className="flex flex-col gap-3">
+                  {[1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="h-12 w-full bg-secondary/50 rounded-xl animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : flejetInfo?.posts?.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                    Scheduled Posts
+                  </p>
+                  {flejetInfo.posts.map((post: any) => (
+                    <div
+                      key={post.id}
+                      className="group relative flex gap-3 p-3 rounded-xl bg-background/50 border border-border/50 hover:border-primary/30 transition-all"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Calendar className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold truncate leading-tight mb-1">
+                          {post.content}
+                        </p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+                          {new Date(post.scheduledTime).toLocaleDateString(
+                            undefined,
+                            {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-center rounded-xl bg-secondary/20 border border-dashed border-border flex flex-col items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground">
+                    <HistoryIcon size={18} />
+                  </div>
+                  <p className="text-xs font-bold text-muted-foreground">
+                    No posts scheduled yet.
+                  </p>
+                </div>
+              )}
+
+              {flejetInfo?.status && (
+                <div className="pt-2 border-t border-border/50">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-muted-foreground">Plan Status</span>
+                    <span
+                      className={
+                        flejetInfo.status.allowed
+                          ? "text-emerald-500"
+                          : "text-rose-500"
+                      }
+                    >
+                      {flejetInfo.status.planType?.toUpperCase() || "TRIAL"}{" "}
+                      {flejetInfo.status.allowed ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Link
+              href="https://flejet.vercel.app/dashboard/schedule-tweets"
+              target="_blank"
+              className="block p-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors hover:bg-primary/5 border-t border-border/30"
+            >
+              View Full Calendar
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Footer / Links */}

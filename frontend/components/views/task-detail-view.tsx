@@ -1,14 +1,23 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { History, X, EyeOff, Share2, Settings } from "lucide-react";
-import type { Task, TaskHistoryEntry } from "@/lib/types";
+import { useState, useRef, useEffect } from "react";
+import {
+  History,
+  X,
+  EyeOff,
+  Share2,
+  Settings,
+  Twitter,
+  Loader,
+} from "lucide-react";
+import type { Task, TaskHistoryEntry, UserData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { compressImage } from "@/lib/image-utils";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { HistoryList } from "@/components/history/history-list";
 import { calculateCalendarStreak } from "@/lib/date-utils";
+import { toast } from "sonner";
 
 import {
   addHistoryEntry,
@@ -16,6 +25,7 @@ import {
   updateTask,
   addToCommunityIndex,
   removeFromCommunityIndex,
+  getUserData,
 } from "@/lib/firebase-db";
 
 import {
@@ -58,6 +68,8 @@ export function TaskDetailView({
   const [formError, setFormError] = useState("");
   const [communityPosts, setCommunityPosts] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false); // ✅ Prevention
+  const [isSchedulingToX, setIsSchedulingToX] = useState(false);
+  const [userData, setUserData] = useState<UserData | null>(null);
 
   const [localHistory, setLocalHistory] = useState(history);
 
@@ -69,6 +81,58 @@ export function TaskDetailView({
 
   const alreadyChecked = Boolean(todayEntry);
 
+  useEffect(() => {
+    getUserData(uid).then((data) => {
+      setUserData(data);
+    });
+  }, [uid]);
+
+  /* ---------------------------------------------------------
+     ✅ Schedule to X via Flejet
+  --------------------------------------------------------- */
+  const handleScheduleToX = async () => {
+    if (!todayEntry || !userData?.flejetConfig) return;
+
+    if (todayEntry.scheduledToX) {
+      toast.error("This post has already been scheduled to X!");
+      return;
+    }
+
+    setIsSchedulingToX(true);
+    try {
+      const res = await fetch("/api/flejet/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: `${task.icon} ${task.title}: Day ${task.streak + 1} Done!\n\n"${todayEntry.text}"\n\n#HabitBuilder #Flejet`,
+          imageUrl: todayEntry.photo,
+          flejetConfig: userData.flejetConfig,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to schedule");
+
+      // Update Local State & Firebase
+      await updateHistoryEntry(uid, task.id, todayEntry.id, {
+        scheduledToX: true,
+      });
+
+      setLocalHistory((prev) =>
+        prev.map((h) =>
+          h.id === todayEntry.id ? { ...h, scheduledToX: true } : h,
+        ),
+      );
+
+      toast.success("Successfully scheduled to X!");
+    } catch (err: any) {
+      console.error("Scheduling error:", err);
+      toast.error(err.message || "Failed to schedule to X");
+    } finally {
+      setIsSchedulingToX(false);
+    }
+  };
+
   /* ---------------------------------------------------------
      ✅ Toggle Community Visibility
   --------------------------------------------------------- */
@@ -77,19 +141,16 @@ export function TaskDetailView({
 
     const newValue = !todayEntry.communityPosts;
 
-    // ✅ Update Firestore entry
     await updateHistoryEntry(uid, task.id, todayEntry.id, {
       communityPosts: newValue,
     });
 
-    // ✅ Handle communityIndex insert/remove
     if (newValue) {
       await addToCommunityIndex(uid, task.id, todayEntry.id);
     } else {
       await removeFromCommunityIndex(uid, task.id, todayEntry.id);
     }
 
-    // ✅ Update local state instantly
     setLocalHistory((prev) =>
       prev.map((h) =>
         h.id === todayEntry.id ? { ...h, communityPosts: newValue } : h,
@@ -101,7 +162,7 @@ export function TaskDetailView({
      ✅ Handle Today's Update Save
   --------------------------------------------------------- */
   const handleSaveUpdate = async () => {
-    if (isSubmitting) return; // Prevention
+    if (isSubmitting) return;
 
     if (!updateText.trim()) {
       setFormError("Please add a description.");
@@ -115,7 +176,6 @@ export function TaskDetailView({
       const file = fileInputRef.current?.files?.[0];
       if (file) {
         const compressedBase64 = await compressImage(file);
-
         try {
           const res = await fetch("/api/cloudinary/upload", {
             method: "POST",
@@ -124,7 +184,6 @@ export function TaskDetailView({
           });
 
           if (!res.ok) throw new Error("Image upload failed");
-
           const data = await res.json();
           photoData = data.url;
         } catch (err) {
@@ -136,7 +195,6 @@ export function TaskDetailView({
       }
 
       const todayISO = new Date().toISOString();
-
       const newHistoryEntry = {
         date: todayISO,
         text: updateText,
@@ -144,22 +202,18 @@ export function TaskDetailView({
         communityPosts,
       };
 
-      // ✅ Add history entry & get docId
       const newHistoryId = await addHistoryEntry(uid, task.id, newHistoryEntry);
-
-      // ✅ If shared, add to communityIndex
       if (communityPosts) {
         await addToCommunityIndex(uid, task.id, newHistoryId);
       }
 
-      // ✅ Update localHistory
       const newEntryWithId: TaskHistoryEntry = {
         id: newHistoryId,
         date: todayISO,
         text: updateText,
         photo: photoData,
         communityPosts,
-        timestamp: new Date(), // ✅ required for TS
+        timestamp: new Date(),
       };
 
       const updatedHistory = [...localHistory, newEntryWithId];
@@ -168,20 +222,14 @@ export function TaskDetailView({
       );
       setLocalHistory(updatedHistory);
 
-      // ✅ Recalculate streak
       const streak = calculateCalendarStreak(updatedHistory);
-
-      // ✅ Update Firestore task metadata
       await updateTask(uid, task.id, {
         lastUpdate: todayISO,
         streak,
       });
 
-      // ✅ Reset form
       setUpdateText("");
       if (fileInputRef.current) fileInputRef.current.value = "";
-
-      // Refresh parent
       onRefresh();
     } catch (error) {
       console.error("Failed to save update:", error);
@@ -193,16 +241,14 @@ export function TaskDetailView({
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-background">
-      {/* Desktop Header (Unified) */}
       <div className="hidden lg:block max-w-2xl mx-auto w-full px-6 pt-2">
         <Header />
       </div>
 
-      {/* Mobile Top Bar (Optimization) */}
       <div className="lg:hidden flex items-center gap-4 px-6 py-4 border-b border-border sticky top-0 bg-background/80 backdrop-blur-xl z-30">
         <button
           onClick={onClose}
-          className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors active:scale-90"
+          className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors active:scale-90 text-foreground"
         >
           <X className="w-6 h-6" />
         </button>
@@ -210,7 +256,7 @@ export function TaskDetailView({
         {onEdit && (
           <button
             onClick={onEdit}
-            className="p-2 rounded-full hover:bg-muted transition-colors active:scale-90"
+            className="p-2 rounded-full hover:bg-muted transition-colors active:scale-90 text-foreground"
           >
             <Settings className="w-6 h-6" />
           </button>
@@ -218,13 +264,11 @@ export function TaskDetailView({
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-4 lg:py-6 pb-24 lg:pb-10 space-y-6 max-w-2xl mx-auto w-full">
-        {/* ✅ Task Card */}
         <div className="mb-5">
           <TaskCard task={task} history={localHistory} readOnly />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* LEFT */}
           <div className="space-y-6">
             <div className="glass-effect rounded-2xl shadow-xl p-6">
               <h3 className="text-xl font-bold mb-4">
@@ -236,14 +280,61 @@ export function TaskDetailView({
               )}
 
               {alreadyChecked && todayEntry && (
-                <div className="mb-4 rounded-lg border p-3">
-                  {todayEntry.photo && (
-                    <img
-                      src={todayEntry.photo}
-                      className="mb-2 rounded-md w-full object-cover"
-                    />
-                  )}
-                  <p className="text-sm">{todayEntry.text}</p>
+                <div className="space-y-4">
+                  <div className="rounded-lg border p-3">
+                    {todayEntry.photo && (
+                      <img
+                        src={todayEntry.photo}
+                        className="mb-2 rounded-md w-full object-cover"
+                      />
+                    )}
+                    <p className="text-sm">{todayEntry.text}</p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={toggleCommunityPost}
+                      className="flex items-center gap-2 px-4 py-2 rounded-full border transition-all hover:bg-muted"
+                    >
+                      {todayEntry.communityPosts ? (
+                        <>
+                          <Share2 className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-bold text-primary">
+                            Shared to Community
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <EyeOff className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm font-bold text-muted-foreground">
+                            Private (Share Now)
+                          </span>
+                        </>
+                      )}
+                    </button>
+
+                    {userData?.flejetConfig && (
+                      <Button
+                        onClick={handleScheduleToX}
+                        disabled={isSchedulingToX || todayEntry.scheduledToX}
+                        className="rounded-full px-4 h-9 font-bold bg-[#1DA1F2] hover:bg-[#1DA1F2]/90 text-white border-0 shadow-lg shadow-[#1DA1F2]/20 disabled:opacity-50 disabled:bg-zinc-800"
+                      >
+                        {isSchedulingToX ? (
+                          <Loader className="w-4 h-4 animate-spin mr-2" />
+                        ) : (
+                          <Twitter
+                            className="w-4 h-4 mr-2"
+                            fill="currentColor"
+                          />
+                        )}
+                        {isSchedulingToX
+                          ? "Scheduling..."
+                          : todayEntry.scheduledToX
+                            ? "Scheduled"
+                            : "Schedule to X"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -286,25 +377,6 @@ export function TaskDetailView({
                   </Button>
                 </>
               )}
-
-              {alreadyChecked && todayEntry && (
-                <button
-                  onClick={toggleCommunityPost}
-                  className="flex items-center gap-2 px-3 py-1 mt-3 rounded-full bg-gray-100 dark:bg-gray-700"
-                >
-                  {todayEntry.communityPosts ? (
-                    <>
-                      <Share2 className="w-4 h-4 text-green-600" />
-                      <span className="text-xs text-green-600">Shared</span>
-                    </>
-                  ) : (
-                    <>
-                      <EyeOff className="w-4 h-4 text-gray-500" />
-                      <span className="text-xs text-gray-500">Private</span>
-                    </>
-                  )}
-                </button>
-              )}
             </div>
 
             <div className="glass-effect rounded-2xl shadow-xl p-6">
@@ -312,7 +384,7 @@ export function TaskDetailView({
                 <h3 className="text-xl font-bold">This Month's Progress</h3>
                 <button
                   onClick={() => setShowHistory(!showHistory)}
-                  className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                  className="p-2 rounded-full hover:bg-muted"
                 >
                   {showHistory ? <X /> : <History />}
                 </button>
@@ -321,7 +393,6 @@ export function TaskDetailView({
             </div>
           </div>
 
-          {/* RIGHT */}
           <div className="space-y-6">
             {showHistory && (
               <div className="glass-effect rounded-2xl shadow-xl p-6">

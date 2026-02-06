@@ -45,6 +45,7 @@ export interface TaskHistoryEntry {
   text: string;
   photo: string | null; // ✅ BASE64
   communityPosts?: boolean;
+  scheduledToX?: boolean;
   timestamp: Date;
 }
 
@@ -56,6 +57,11 @@ export interface UserData {
   bio?: string | null;
   location?: string | null;
   socialLinks?: Record<string, string>;
+  flejetConfig?: {
+    workspaceId: string;
+    apiKey: string;
+    userId: string;
+  } | null;
 }
 
 /* =========================================================
@@ -104,11 +110,16 @@ export async function getUserData(uid: string): Promise<UserData | null> {
     streak: data.streak || 0,
     lastCheckIn: data.lastCheckIn || "",
     username: data.username || null,
+    flejetConfig: data.flejetConfig || null,
   };
 }
 
 export async function saveUserData(uid: string, data: Partial<UserData>) {
   await setDoc(doc(db, "users", uid), data, { merge: true });
+}
+
+export async function disconnectFromFlejet(uid: string) {
+  await setDoc(doc(db, "users", uid), { flejetConfig: null }, { merge: true });
 }
 
 export async function getSuggestedUsers(limitCount = 3) {
@@ -219,6 +230,7 @@ export async function getTaskHistory(
       text: data.text,
       photo: data.photo || null,
       communityPosts: data.communityPosts || false,
+      scheduledToX: data.scheduledToX || false,
       timestamp: data.timestamp.toDate(),
     } as TaskHistoryEntry;
   });

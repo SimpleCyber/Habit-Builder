@@ -18,6 +18,7 @@ export interface TaskHistoryEntry {
   text: string;
   photo: string | null; // BASE64 ✅
   communityPosts?: boolean;
+  scheduledToX?: boolean;
   likes?: string[]; // Array of UIDs
   commentsCount?: number;
   timestamp: Date;
@@ -26,8 +27,14 @@ export interface TaskHistoryEntry {
 export interface UserData {
   streak: number;
   lastCheckIn: string;
+  name?: string | null;
   username?: string | null;
   bio?: string | null;
   location?: string | null;
   socialLinks?: Record<string, string>;
+  flejetConfig?: {
+    workspaceId: string;
+    apiKey: string;
+    userId: string;
+  } | null;
 }

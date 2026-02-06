@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import React from "react";
 import { useAppBadge } from "@/hooks/use-app-badge";
+import { cn } from "@/lib/utils";
 
 import { SocialSidebar } from "@/components/layout/social-sidebar";
 import { RightSidebar } from "@/components/layout/right-sidebar";
@@ -20,12 +21,15 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     pathname === "/community" ||
     pathname === "/friends" ||
     pathname === "/profile" ||
+    pathname === "/messages" ||
     (pathname.startsWith("/") &&
       pathname.length > 1 &&
       !["/auth", "/onboarding", "/_next", "/api", "/settings", "/home"].some(
         (p) => pathname.startsWith(p),
       ) &&
       !pathname.includes("."));
+
+  const isMessagesPage = pathname === "/messages";
 
   const handleAddClick = () => {
     if (pathname === "/home") {
@@ -46,12 +50,17 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         <SocialSidebar />
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 w-full max-w-2xl border-x border-zinc-200 dark:border-zinc-800 min-h-screen pb-32 lg:pb-0">
+        <main
+          className={cn(
+            "flex-1 min-w-0 w-full border-x border-zinc-200 dark:border-zinc-800 min-h-screen pb-32 lg:pb-0",
+            isMessagesPage ? "max-w-none" : "max-w-2xl",
+          )}
+        >
           {children}
         </main>
 
         {/* Right Sidebar (Desktop) */}
-        <RightSidebar />
+        {!isMessagesPage && <RightSidebar />}
       </div>
       <MobileNav onAddClick={handleAddClick} />
     </div>

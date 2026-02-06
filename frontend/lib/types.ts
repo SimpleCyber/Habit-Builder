@@ -31,10 +31,29 @@ export interface UserData {
   username?: string | null;
   bio?: string | null;
   location?: string | null;
+  photoURL?: string | null;
   socialLinks?: Record<string, string>;
   flejetConfig?: {
     workspaceId: string;
     apiKey: string;
     userId: string;
   } | null;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  text: string;
+  photoURL?: string;
+  createdAt: any; // Timestamp
+  status?: "sending" | "sent" | "error";
+}
+
+export interface Conversation {
+  id: string;
+  participantUids: string[];
+  lastMessage?: string;
+  lastMessageAt?: any; // Timestamp
+  updatedAt: any; // Timestamp
+  unreadCount?: Record<string, number>;
 }

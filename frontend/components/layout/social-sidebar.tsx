@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Users, UserPlus, User, LogOut } from "lucide-react";
+import { Home, Users, UserPlus, User, LogOut, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
@@ -18,6 +18,7 @@ import {
 const NAV_ITEMS = [
   { label: "Home", href: "/home", icon: Home },
   { label: "Community", href: "/community", icon: Users },
+  { label: "Messages", href: "/messages", icon: Mail },
   { label: "Friends", href: "/friends", icon: UserPlus },
 ];
 
@@ -33,16 +34,24 @@ export function SocialSidebar() {
     }
   };
 
+  const isCollapsed = pathname === "/messages";
+
   return (
-    <aside className="sticky top-0 h-screen w-[275px] flex-col justify-between border-r border-zinc-200 dark:border-zinc-800 px-2 py-4 hidden lg:flex">
+    <aside
+      className={cn(
+        "sticky top-0 h-screen flex-col justify-between border-r border-zinc-200 dark:border-zinc-800 px-2 py-4 hidden lg:flex transition-all duration-300",
+        isCollapsed ? "w-[88px]" : "w-[275px]",
+      )}
+    >
       <div className="space-y-4">
-        {/* Logo */}
-        <div className="px-4 py-2">
+        <div className={cn("px-4 py-2", isCollapsed && "px-2")}>
           <Link href="/home" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-green-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded bg-green-500 flex items-center justify-center shrink-0">
               <span className="text-black font-black text-lg">H</span>
             </div>
-            <span className="text-xl font-bold tracking-tight">HabitX</span>
+            {!isCollapsed && (
+              <span className="text-xl font-bold tracking-tight">HabitX</span>
+            )}
           </Link>
         </div>
 
@@ -56,15 +65,17 @@ export function SocialSidebar() {
                 href={item.href}
                 className={cn(
                   "flex items-center gap-4 px-4 py-3 rounded-full text-xl font-medium transition-colors duration-200",
+                  isCollapsed ? "justify-center px-0" : "px-4",
                   isActive
                     ? "font-bold"
                     : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
                 )}
+                title={isCollapsed ? item.label : ""}
               >
                 <item.icon
                   className={cn("w-7 h-7", isActive && "fill-current")}
                 />
-                {item.label}
+                {!isCollapsed && item.label}
               </Link>
             );
           })}
@@ -73,18 +84,22 @@ export function SocialSidebar() {
             href="/profile"
             className={cn(
               "flex items-center gap-4 px-4 py-3 rounded-full text-xl font-medium transition-colors duration-200",
+              isCollapsed ? "justify-center px-0" : "px-4",
               pathname === "/profile" || pathname === `/${user?.displayName}`
                 ? "font-bold"
                 : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
             )}
+            title={isCollapsed ? "Profile" : ""}
           >
             <User
               className={cn(
                 "w-7 h-7",
-                pathname === "/profile" && "fill-current",
+                (pathname === "/profile" ||
+                  pathname === `/${user?.displayName}`) &&
+                  "fill-current",
               )}
             />
-            Profile
+            {!isCollapsed && "Profile"}
           </Link>
         </nav>
       </div>
@@ -93,22 +108,31 @@ export function SocialSidebar() {
       {user && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <div className="flex items-center justify-between p-3 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors mt-auto mb-2">
+            <div
+              className={cn(
+                "flex items-center gap-3 overflow-hidden p-3 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors mt-auto mb-2",
+                isCollapsed
+                  ? "justify-center p-0 w-12 h-12 mx-auto"
+                  : "justify-between",
+              )}
+            >
               <div className="flex items-center gap-3 overflow-hidden">
-                <Avatar className="w-10 h-10">
+                <Avatar className="w-10 h-10 shrink-0">
                   <AvatarImage src={user.photoURL || ""} />
                   <AvatarFallback>{user.displayName?.[0]}</AvatarFallback>
                 </Avatar>
-                <div className="flex flex-col min-w-0 text-left">
-                  <span className="font-bold text-sm truncate">
-                    {user.displayName}
-                  </span>
-                  <span className="text-zinc-500 text-sm truncate">
-                    @{user.displayName?.toLowerCase().replace(/\s+/g, "")}
-                  </span>
-                </div>
+                {!isCollapsed && (
+                  <div className="flex flex-col min-w-0 text-left">
+                    <span className="font-bold text-sm truncate">
+                      {user.displayName}
+                    </span>
+                    <span className="text-zinc-500 text-sm truncate">
+                      @{user.displayName?.toLowerCase().replace(/\s+/g, "")}
+                    </span>
+                  </div>
+                )}
               </div>
-              <div className="text-zinc-500">•••</div>
+              {!isCollapsed && <div className="text-zinc-500">•••</div>}
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60">

@@ -19,6 +19,7 @@ import {
   arrayRemove,
   increment,
   QueryDocumentSnapshot,
+  onSnapshot,
   type DocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
@@ -584,6 +585,72 @@ export async function unfollowUser(myUid: string, friendUid: string) {
   await Promise.all(deletes);
 }
 
+export async function getCategorizedFriends(myUid: string) {
+  const qSent = query(
+    collection(db, "friendRequests"),
+    where("fromUid", "==", myUid),
+  );
+  const qReceived = query(
+    collection(db, "friendRequests"),
+    where("toUid", "==", myUid),
+  );
+
+  const [sSent, sReceived] = await Promise.all([
+    getDocs(qSent),
+    getDocs(qReceived),
+  ]);
+
+  // Handle potentially duplicate/stale requests if any
+  const sentMap = new Map();
+  sSent.forEach((d) => {
+    const data = d.data();
+    if (data.status !== "rejected")
+      sentMap.set(data.toUid, { id: d.id, ...data });
+  });
+
+  const receivedMap = new Map();
+  sReceived.forEach((d) => {
+    const data = d.data();
+    if (data.status !== "rejected")
+      receivedMap.set(data.fromUid, { id: d.id, ...data });
+  });
+
+  const followingUids = Array.from(sentMap.keys());
+  const followerUids = Array.from(receivedMap.keys());
+
+  const fetchProfiles = async (uids: string[], sourceMap: Map<string, any>) => {
+    return Promise.all(
+      uids.map(async (uid) => {
+        const uSnap = await getDoc(doc(db, "users", uid));
+        const u = uSnap.data() || {};
+        const requestData = sourceMap.get(uid);
+        return {
+          uid,
+          email: u.email || "",
+          name: u.name || null,
+          photoURL: u.photoURL || null,
+          username: u.username || null,
+          requestId: requestData?.id,
+          status: requestData?.status,
+        };
+      }),
+    );
+  };
+
+  const [following, followers] = await Promise.all([
+    fetchProfiles(followingUids, sentMap),
+    fetchProfiles(followerUids, receivedMap),
+  ]);
+
+  // Connections are mutual accepted follows
+  const connections = following.filter(
+    (f) =>
+      f.status === "accepted" && receivedMap.get(f.uid)?.status === "accepted",
+  );
+
+  return { following, followers, connections };
+}
+
 export async function getUserProfile(uid: string) {
   const snap = await getDoc(doc(db, "users", uid));
   if (!snap.exists()) return null;
@@ -976,4 +1043,87 @@ export async function getUserByUsername(username: string) {
 
   const { uid } = usernameSnap.data() as { uid: string };
   return getUserProfile(uid);
+}
+
+/* =========================================================
+   ✅ CHAT / MESSAGING
+========================================================= */
+
+export async function getOrCreateConversation(
+  myUid: string,
+  friendUid: string,
+) {
+  const participantUids = [myUid, friendUid].sort();
+  const q = query(
+    collection(db, "conversations"),
+    where("participantUids", "==", participantUids),
+  );
+
+  const snap = await getDocs(q);
+  if (!snap.empty) {
+    return snap.docs[0].id;
+  }
+
+  const docRef = await addDoc(collection(db, "conversations"), {
+    participantUids,
+    updatedAt: Timestamp.now(),
+    lastMessage: "",
+    lastMessageAt: Timestamp.now(),
+  });
+
+  return docRef.id;
+}
+
+export async function sendMessage(
+  convId: string,
+  senderId: string,
+  text: string,
+  photoURL?: string,
+) {
+  const messageData = {
+    senderId,
+    text,
+    photoURL: photoURL || null,
+    createdAt: Timestamp.now(),
+  };
+
+  await addDoc(
+    collection(db, "conversations", convId, "messages"),
+    messageData,
+  );
+
+  // Update conversation summary
+  const convRef = doc(db, "conversations", convId);
+  await updateDoc(convRef, {
+    lastMessage: text || (photoURL ? "Photo" : ""),
+    lastMessageAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  });
+}
+
+export async function getConversations(uid: string) {
+  const q = query(
+    collection(db, "conversations"),
+    where("participantUids", "array-contains", uid),
+    orderBy("updatedAt", "desc"),
+  );
+
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export function subscribeToMessages(
+  convId: string,
+  callback: (messages: any[]) => void,
+) {
+  const q = query(
+    collection(db, "conversations", convId, "messages"),
+    orderBy("createdAt", "asc"),
+    limit(100),
+  );
+
+  return onSnapshot(q, (snap: any) => {
+    const messages = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+    callback(messages);
+  });
 }

@@ -88,21 +88,6 @@ export function UserMenu() {
             Your Friends
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link
-            href="/friends/requestrecive"
-            className="flex items-center gap-2"
-          >
-            <UserRoundCheck className="w-4 h-4" />
-            Requests Received
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/friends/requestsend" className="flex items-center gap-2">
-            <UserRoundSearch className="w-4 h-4" />
-            Search Friends
-          </Link>
-        </DropdownMenuItem>
 
         {username && (
           <DropdownMenuItem asChild>

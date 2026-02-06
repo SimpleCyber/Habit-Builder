@@ -112,6 +112,15 @@ export default function MessagesPage() {
     loadInitialData();
   }, [user]);
 
+  // Communicate chat open state to client-layout for mobile nav visibility
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("chat-state-change", {
+        detail: { isOpen: !!selectedConvId },
+      }),
+    );
+  }, [selectedConvId]);
+
   // Subscribe to messages when a conversation is selected
   useEffect(() => {
     if (!selectedConvId) {
@@ -328,7 +337,7 @@ export default function MessagesPage() {
       <div
         className={cn(
           "w-full md:w-[400px] flex flex-col border-r border-zinc-200 dark:border-zinc-800 shrink-0",
-          selectedConvId ? "hidden md:flex" : "flex",
+          selectedConvId ? "hidden md:flex" : "flex pb-24 lg:pb-0",
         )}
       >
         <div className="p-4 flex items-center justify-between">

@@ -30,6 +30,24 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       !pathname.includes("."));
 
   const isMessagesPage = pathname === "/messages";
+  const [isChatOpen, setIsChatOpen] = React.useState(false);
+
+  // Listen for custom event from messages page to know if a chat is open
+  React.useEffect(() => {
+    const handleChatState = (e: CustomEvent) => {
+      setIsChatOpen(e.detail.isOpen);
+    };
+    window.addEventListener("chat-state-change" as any, handleChatState);
+    return () =>
+      window.removeEventListener("chat-state-change" as any, handleChatState);
+  }, []);
+
+  // Reset chat open state when navigating away from messages
+  React.useEffect(() => {
+    if (!isMessagesPage) {
+      setIsChatOpen(false);
+    }
+  }, [isMessagesPage]);
 
   const handleAddClick = () => {
     if (pathname === "/home") {
@@ -42,6 +60,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   if (!isSocialPage) {
     return <main className="min-h-[100dvh] pb-24 lg:pb-0">{children}</main>;
   }
+
+  // Hide mobile nav when on messages page AND a chat is open
+  const showMobileNav = !(isMessagesPage && isChatOpen);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex justify-center">
@@ -62,7 +83,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         {/* Right Sidebar (Desktop) */}
         {!isMessagesPage && <RightSidebar />}
       </div>
-      <MobileNav onAddClick={handleAddClick} />
+      {showMobileNav && <MobileNav onAddClick={handleAddClick} />}
     </div>
   );
 }

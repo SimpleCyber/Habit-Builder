@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { SocialProofSection } from "@/components/landing/SocialProofSection";
-import { ChromeExtensionSection } from "@/components/landing/ChromeExtensionSection";
 import { Footer } from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -92,7 +90,6 @@ export default function LandingPage() {
         <div className="hidden sm:block">
           <FeaturesSection />
           <SocialProofSection />
-          <ChromeExtensionSection />
 
           {/* Final CTA */}
           <section className="py-20 sm:py-24 border-t border-white/5 bg-gradient-to-b from-[#0A0A0A] to-[#111]">

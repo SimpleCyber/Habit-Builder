@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isParticipant(participantsList) {
+      return isAuthenticated() && request.auth.uid in participantsList;
+    }
+
+    // 1. Username Registry
+    match /usernames/{usernameDoc} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    }
+
+    // 2. User Profiles
+    match /users/{userId} {
+      // Public profile display and social discovery
+      allow read: if true;
+      // Only the account owner can update or create their own profile
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+
+      // 3. Tasks & Habit Tracking
+      match /tasks/{taskId} {
+        // Anyone can view public habits / viewable tasks
+        allow read: if true;
+        // Only owner can create, edit, or delete their tasks
+        allow write: if isOwner(userId);
+
+        // 4. Task Check-In History
+        match /history/{historyId} {
+          allow read: if true;
+          allow write: if isOwner(userId);
+          // Allow authenticated users to like/comment count update
+          allow update: if isAuthenticated() && (
+            isOwner(userId) ||
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount', 'likes', 'updatedAt'])
+          );
+
+          // Comments on Task History entries
+          match /comments/{commentId} {
+            allow read: if true;
+            allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+            allow update, delete: if isAuthenticated() && (
+              isOwner(userId) || resource.data.uid == request.auth.uid
+            );
+          }
+        }
+      }
+
+      // 5. Friend Task Access Grants
+      match /grants/{grantId} {
+        allow read: if isOwner(userId) || (isAuthenticated() && request.auth.uid == grantId);
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // 6. Friend Requests
+    match /friendRequests/{requestId} {
+      allow read: if isAuthenticated() && (
+        resource.data.fromUid == request.auth.uid || 
+        resource.data.toUid == request.auth.uid
+      );
+      allow create: if isAuthenticated() && request.resource.data.fromUid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (
+        resource.data.fromUid == request.auth.uid || 
+        resource.data.toUid == request.auth.uid
+      );
+    }
+
+    // 7. Direct Messaging Conversations
+    match /conversations/{convId} {
+      allow read: if isAuthenticated() && isParticipant(resource.data.participantUids);
+      allow create: if isAuthenticated() && isParticipant(request.resource.data.participantUids);
+      allow update: if isAuthenticated() && isParticipant(resource.data.participantUids);
+      allow delete: if false;
+
+      // Messages inside conversation
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && 
+          isParticipant(get(/databases/$(database)/documents/conversations/$(convId)).data.participantUids);
+        allow create: if isAuthenticated() && 
+          isParticipant(get(/databases/$(database)/documents/conversations/$(convId)).data.participantUids) &&
+          request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    // 8. Community Shared Posts
+    match /communityIndex/{postId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'commentsCount', 'updatedAt'])
+      );
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Default deny all other paths
+    match /{document=**} {
+      allow read, write: false;
+    }
+  }
+}

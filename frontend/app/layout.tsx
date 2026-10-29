@@ -6,10 +6,10 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { Suspense } from "react";
 import "./globals.css";
 import { Toaster } from "sonner";
-import HelpDeckWidget from "@/components/layout/HelpDeckWidget";
 import { ClientLayout } from "@/components/layout/client-layout";
 import { TasksProvider } from "@/hooks/use-tasks-context";
 import { FlejetProvider } from "@/hooks/use-flejet";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -34,8 +34,6 @@ export const metadata: Metadata = {
   },
 };
 
-import { ThemeProvider } from "@/components/theme-provider";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -57,7 +55,6 @@ export default function RootLayout({
               <TasksProvider>
                 <FlejetProvider>
                   <ClientLayout>{children}</ClientLayout>
-                  <HelpDeckWidget />
                 </FlejetProvider>
               </TasksProvider>
             </AuthProvider>

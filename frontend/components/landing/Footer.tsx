@@ -76,16 +76,6 @@ export function Footer() {
                     Integrations
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    href="https://chromewebstore.google.com"
-                    target="_blank"
-                    className="text-sm text-muted-foreground hover:text-primary flex items-center justify-center lg:justify-start gap-1.5"
-                  >
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                    Chrome Extension
-                  </Link>
-                </li>
               </ul>
             </div>
             <div className="text-center lg:text-left">

@@ -6,6 +6,7 @@
 # next.js
 /.next/
 /out/
+.next
 
 # production
 /build
@@ -16,8 +17,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
+# env files (allow only .env.example)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -26,7 +28,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-
-
-.next
-
+# Service worker generated assets
+frontend/public/sw.js
+frontend/public/workbox-*.js
+frontend/public/swe-worker-*.js

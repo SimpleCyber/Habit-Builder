@@ -8,7 +8,7 @@ import {
   Share2,
   Settings,
   Twitter,
-  Loader,
+  Loader2,
 } from "lucide-react";
 import type { Task, TaskHistoryEntry, UserData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -228,6 +228,12 @@ export function TaskDetailView({
         streak,
       });
 
+      if (streak > 1) {
+        toast.success(`🔥 Streak is now ${streak} days! Keep the momentum going!`);
+      } else {
+        toast.success("✅ Habit checked in for today!");
+      }
+
       setUpdateText("");
       if (fileInputRef.current) fileInputRef.current.value = "";
       onRefresh();
@@ -320,7 +326,7 @@ export function TaskDetailView({
                         className="rounded-full px-4 h-9 font-bold bg-[#1DA1F2] hover:bg-[#1DA1F2]/90 text-white border-0 shadow-lg shadow-[#1DA1F2]/20 disabled:opacity-50 disabled:bg-zinc-800"
                       >
                         {isSchedulingToX ? (
-                          <Loader className="w-4 h-4 animate-spin mr-2" />
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
                         ) : (
                           <Twitter
                             className="w-4 h-4 mr-2"

@@ -23,6 +23,7 @@ import {
   type DocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { sanitizeText } from "./security";
 
 /* =========================================================
    ✅ INTERFACES
@@ -781,31 +782,94 @@ export async function removeFromCommunityIndex(
 }
 
 export async function findUserByUsername(username: string) {
-  const q = query(collection(db, "users"), where("username", "==", username));
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-  const docSnap = snap.docs[0];
-  return { uid: docSnap.id, ...docSnap.data() };
+  if (!username) return null;
+  const clean = username.trim();
+  const cleanLower = clean.toLowerCase();
+
+  try {
+    // 1. Try exact username match
+    const q1 = query(collection(db, "users"), where("username", "==", clean));
+    const snap1 = await getDocs(q1);
+    if (!snap1.empty) {
+      const docSnap = snap1.docs[0];
+      return { uid: docSnap.id, ...docSnap.data() };
+    }
+
+    // 2. Try lowercase username match (usernameLower)
+    const q2 = query(collection(db, "users"), where("usernameLower", "==", cleanLower));
+    const snap2 = await getDocs(q2);
+    if (!snap2.empty) {
+      const docSnap = snap2.docs[0];
+      return { uid: docSnap.id, ...docSnap.data() };
+    }
+
+    // 3. Try lowercase username match (username)
+    const q3 = query(collection(db, "users"), where("username", "==", cleanLower));
+    const snap3 = await getDocs(q3);
+    if (!snap3.empty) {
+      const docSnap = snap3.docs[0];
+      return { uid: docSnap.id, ...docSnap.data() };
+    }
+
+    // 4. Try usernames registry collection
+    const uSnap = await getDoc(doc(db, "usernames", cleanLower));
+    if (uSnap.exists()) {
+      const uid = uSnap.data().uid;
+      const userSnap = await getDoc(doc(db, "users", uid));
+      if (userSnap.exists()) {
+        return { uid: userSnap.id, ...userSnap.data() };
+      }
+    }
+  } catch (err) {
+    console.error("Error in findUserByUsername:", err);
+  }
+
+  return null;
 }
 
 export async function getCommunityPostsByUser(uid: string) {
-  const q = query(
-    collection(db, "communityIndex"),
-    where("userId", "==", uid),
-    orderBy("createdAt", "desc"),
-  );
-  const snap = await getDocs(q);
+  try {
+    let snap;
+    try {
+      const q = query(
+        collection(db, "communityIndex"),
+        where("userId", "==", uid),
+        orderBy("createdAt", "desc"),
+      );
+      snap = await getDocs(q);
+    } catch {
+      // Fallback query without composite index requirement
+      const fallbackQuery = query(
+        collection(db, "communityIndex"),
+        where("userId", "==", uid),
+      );
+      snap = await getDocs(fallbackQuery);
+    }
 
-  const posts = await Promise.all(
-    snap.docs.map(async (d) => {
-      const { userId, taskId, historyId } = d.data();
-      const post = await getCommunityPostByReference(userId, taskId, historyId);
-      if (!post) return null;
-      return { ...post, id: d.id };
-    }),
-  );
+    const posts = await Promise.all(
+      snap.docs.map(async (d) => {
+        try {
+          const { userId, taskId, historyId } = d.data();
+          const post = await getCommunityPostByReference(userId, taskId, historyId);
+          if (!post) return null;
+          return { ...post, id: d.id, createdAt: d.data().createdAt };
+        } catch {
+          return null;
+        }
+      }),
+    );
 
-  return posts.filter(Boolean);
+    return posts
+      .filter(Boolean)
+      .sort((a, b) => {
+        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || 0).getTime();
+        return timeB - timeA;
+      });
+  } catch (err) {
+    console.error("Error fetching community posts for user:", err);
+    return [];
+  }
 }
 
 export async function getCommunityPostById(communityIndexId: string) {
@@ -949,6 +1013,7 @@ export async function addCommunityPostComment(
 
   await addDoc(commentsRef, {
     ...commentData,
+    text: sanitizeText(commentData.text, 1000),
     createdAt: Timestamp.now(),
   });
 
@@ -1080,9 +1145,10 @@ export async function sendMessage(
   text: string,
   photoURL?: string,
 ) {
+  const cleanText = sanitizeText(text, 2000);
   const messageData = {
     senderId,
-    text,
+    text: cleanText,
     photoURL: photoURL || null,
     createdAt: Timestamp.now(),
   };
@@ -1095,7 +1161,7 @@ export async function sendMessage(
   // Update conversation summary
   const convRef = doc(db, "conversations", convId);
   await updateDoc(convRef, {
-    lastMessage: text || (photoURL ? "Photo" : ""),
+    lastMessage: cleanText || (photoURL ? "Photo" : ""),
     lastMessageAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   });

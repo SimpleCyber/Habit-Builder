@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Flame, Users, Chrome } from "lucide-react";
+import { ArrowRight, Flame, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
@@ -90,17 +90,6 @@ export function HeroSection() {
                 Claim Your Username
               </Button>
             </Link>
-            <Button
-              size="lg"
-              variant="outline"
-              className="w-full sm:w-auto h-14 px-8 text-lg font-bold rounded-full border-white/10 bg-white/5 text-white hover:bg-white/10 transition-all"
-              onClick={() =>
-                window.open("https://chromewebstore.google.com", "_blank")
-              }
-            >
-              <Chrome className="mr-2 w-5 h-5 text-green-400" />
-              Download Extension
-            </Button>
           </motion.div>
 
           <motion.div

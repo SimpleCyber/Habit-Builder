@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
 import {
   getCommunityIndexPage,
   getCommunityPostByReference,
@@ -9,7 +10,7 @@ import {
   getOutgoingRequests,
   sendFriendRequest,
 } from "@/lib/firebase-db";
-import { Loader } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { TaskHistoryEntry, Task } from "@/lib/types";
 import {
@@ -23,6 +24,7 @@ import {
 
 export default function CommunityPage() {
   const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
 
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [displayedPosts, setDisplayedPosts] = useState<CommunityPost[]>([]);
@@ -40,61 +42,72 @@ export default function CommunityPage() {
   // ✅ Fetch initial community posts
   // -----------------------------
   const fetchCommunityData = useCallback(async () => {
-    if (!user) return;
-
     try {
       setLoading(true);
 
-      // ✅ Load friends + outgoing requests
-      const [friendsList, outgoing] = await Promise.all([
-        getMyFriends(user.uid),
-        getOutgoingRequests(user.uid),
-      ]);
+      let friendUids = new Set<string>();
+      let sentUids = new Set<string>();
 
-      const friendUids = new Set(friendsList.map((f) => f.uid));
-      const sentUids = new Set(
-        outgoing.filter((r) => r.status === "pending").map((r) => r.toUid),
-      );
+      // Load friends + outgoing requests only if logged in
+      if (user) {
+        try {
+          const [friendsList, outgoing] = await Promise.all([
+            getMyFriends(user.uid),
+            getOutgoingRequests(user.uid),
+          ]);
+
+          friendUids = new Set(friendsList.map((f) => f.uid));
+          sentUids = new Set(
+            outgoing.filter((r) => r.status === "pending").map((r) => r.toUid),
+          );
+        } catch (friendErr) {
+          console.warn("Could not load friend status:", friendErr);
+        }
+      }
 
       setFriends(friendUids);
       setSentRequests(sentUids);
 
-      // ✅ Load first page from communityIndex
+      // Load first page from communityIndex
       const { index, lastDoc } = await getCommunityIndexPage(POSTS_PER_LOAD);
       lastIndexDoc.current = lastDoc;
 
       const fullPosts = (
         await Promise.all(
           index.map(async (item) => {
-            const post = await getCommunityPostByReference(
-              item.userId,
-              item.taskId,
-              item.historyId,
-            );
+            try {
+              const post = await getCommunityPostByReference(
+                item.userId,
+                item.taskId,
+                item.historyId,
+              );
 
-            if (!post) return null;
+              if (!post) return null;
 
-            return {
-              id: item.id, // ✅ Pass the community index ID
-              uid: post.uid,
-              name: post.name,
-              username: post.username,
-              email: post.email,
-              photoURL: post.photoURL,
+              return {
+                id: item.id,
+                uid: post.uid,
+                name: post.name,
+                username: post.username,
+                email: post.email,
+                photoURL: post.photoURL,
 
-              task: post.task as Task,
-              update: post.update as TaskHistoryEntry,
+                task: post.task as Task,
+                update: post.update as TaskHistoryEntry,
 
-              isFriend: friendUids.has(post.uid),
-              requestStatus: sentUids.has(post.uid) ? "sent" : "none",
+                isFriend: friendUids.has(post.uid),
+                requestStatus: sentUids.has(post.uid) ? "sent" : "none",
 
-              createdAt: post.createdAt,
-            } as CommunityPost;
+                createdAt: post.createdAt,
+              } as CommunityPost;
+            } catch {
+              return null;
+            }
           }),
         )
       ).filter((p): p is CommunityPost => p !== null);
 
-      setPosts(fullPosts); // ✅ only first page, not everything
+      setPosts(fullPosts);
       setDisplayedPosts(fullPosts);
     } catch (err) {
       console.error("Error loading community feed:", err);
@@ -121,35 +134,39 @@ export default function CommunityPage() {
       const newPosts = (
         await Promise.all(
           index.map(async (item) => {
-            const post = await getCommunityPostByReference(
-              item.userId,
-              item.taskId,
-              item.historyId,
-            );
+            try {
+              const post = await getCommunityPostByReference(
+                item.userId,
+                item.taskId,
+                item.historyId,
+              );
 
-            if (!post) return null;
+              if (!post) return null;
 
-            return {
-              id: item.id,
-              uid: post.uid,
-              name: post.name,
-              username: post.username,
-              email: post.email,
-              photoURL: post.photoURL,
+              return {
+                id: item.id,
+                uid: post.uid,
+                name: post.name,
+                username: post.username,
+                email: post.email,
+                photoURL: post.photoURL,
 
-              task: post.task as Task,
-              update: post.update as TaskHistoryEntry,
+                task: post.task as Task,
+                update: post.update as TaskHistoryEntry,
 
-              isFriend: friends.has(post.uid),
-              requestStatus: sentRequests.has(post.uid) ? "sent" : "none",
+                isFriend: friends.has(post.uid),
+                requestStatus: sentRequests.has(post.uid) ? "sent" : "none",
 
-              createdAt: post.createdAt,
-            } as CommunityPost;
+                createdAt: post.createdAt,
+              } as CommunityPost;
+            } catch {
+              return null;
+            }
           }),
         )
       ).filter((p): p is CommunityPost => p !== null);
 
-      // ✅ Append the new posts
+      // Append the new posts
       setPosts((prev) => [...prev, ...newPosts]);
       setDisplayedPosts((prev) => [...prev, ...newPosts]);
     } catch (err) {
@@ -177,14 +194,18 @@ export default function CommunityPage() {
 
   // ✅ initial fetch
   useEffect(() => {
-    if (!authLoading && user) fetchCommunityData();
-  }, [authLoading, user, fetchCommunityData]);
+    if (!authLoading) fetchCommunityData();
+  }, [authLoading, fetchCommunityData]);
 
   // ---------------------------------------------------------
   // ✅ Follow Request Handler
   // ---------------------------------------------------------
   const handleFollowRequest = async (targetUid: string) => {
-    if (!user) return;
+    if (!user) {
+      toast.error("Please log in to follow users");
+      router.push("/auth");
+      return;
+    }
 
     if (sentRequests.has(targetUid)) {
       toast.warning("Request already sent");
@@ -212,27 +233,29 @@ export default function CommunityPage() {
   if (authLoading)
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader className="w-8 h-8 animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
 
   return (
-    <div className="">
+    <div className="min-h-screen pb-20">
       <div className="p-5 border-b border-r-1 border-zinc-200 dark:border-zinc-800 sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-md z-10">
         <h1 className="text-xl font-bold">Community</h1>
       </div>
 
       {/* Loading */}
       {loading && posts.length === 0 && (
-        <div className="flex justify-center py-12">
-          <Loader className="w-6 h-6 animate-spin" />
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading community feed...</p>
         </div>
       )}
 
       {/* Empty */}
       {!loading && posts.length === 0 && (
-        <div className="text-center text-muted-foreground py-12">
-          No community posts yet.
+        <div className="text-center text-muted-foreground py-16 p-6">
+          <p className="text-base font-semibold mb-1">No community posts yet.</p>
+          <p className="text-xs">Check in on your habits and share them to the community to be the first!</p>
         </div>
       )}
 
@@ -240,7 +263,7 @@ export default function CommunityPage() {
       <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
         {displayedPosts.map((post, i) => (
           <CommunityPostCard
-            key={`${post.uid}-${post.task.id}-${i}`}
+            key={`${post.uid}-${post.task?.id || i}-${post.id}`}
             post={post}
             user={user}
             sentRequests={sentRequests}
@@ -256,7 +279,7 @@ export default function CommunityPage() {
           className="py-8 text-center flex justify-center"
         >
           {loading && (
-            <Loader className="w-5 h-5 animate-spin text-muted-foreground" />
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           )}
         </div>
       )}

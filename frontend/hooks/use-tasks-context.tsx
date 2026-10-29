@@ -18,6 +18,7 @@ import {
   type Task,
   type TaskHistoryEntry,
 } from "@/lib/firebase-db";
+import { getTodayString, normalizeToLocalDateString } from "@/lib/date-utils";
 
 interface TasksContextType {
   tasks: Task[];
@@ -57,9 +58,14 @@ export const TasksProvider = ({ children }: { children: ReactNode }) => {
   const loadTasks = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const data = await getTasksFromDb(user.uid);
-    setTasks(data || []);
-    setLoading(false);
+    try {
+      const data = await getTasksFromDb(user.uid);
+      setTasks(data || []);
+    } catch (err) {
+      console.error("Failed to load tasks:", err);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -82,8 +88,12 @@ export const TasksProvider = ({ children }: { children: ReactNode }) => {
       try {
         const pairs = await Promise.all(
           ids.map(async (id) => {
-            const h = await getTaskHistory(user.uid, id);
-            return [id, h] as const;
+            try {
+              const h = await getTaskHistory(user.uid, id);
+              return [id, h] as const;
+            } catch {
+              return [id, []] as const;
+            }
           }),
         );
         setHistories((prev) => {
@@ -98,7 +108,7 @@ export const TasksProvider = ({ children }: { children: ReactNode }) => {
     [user, tasks],
   );
 
-  // Load/refresh history whenever tasks list changes
+  // Lazy-load history only for tasks that haven't been loaded yet
   useEffect(() => {
     if (!user || tasks.length === 0) return;
 
@@ -111,39 +121,91 @@ export const TasksProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, tasks, histories, refreshHistories]);
 
+  // Optimistic Add Task
   const addTask = async (
     taskData: Omit<Task, "id" | "createdAt" | "streak" | "lastUpdate">,
   ) => {
     if (!user || tasks.length >= 5) return;
-    const taskId = await createTaskInDb(user.uid, taskData);
-    await loadTasks();
-    return taskId;
+
+    const tempId = `temp_${Date.now()}`;
+    const newTask: Task = {
+      ...taskData,
+      id: tempId,
+      streak: 0,
+      lastUpdate: null,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Optimistically update list
+    setTasks((prev) => [...prev, newTask]);
+
+    try {
+      const realId = await createTaskInDb(user.uid, taskData);
+      if (realId) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === tempId ? { ...t, id: realId } : t)),
+        );
+      }
+      return realId;
+    } catch (err) {
+      console.error("Failed to add task:", err);
+      // Revert optimistic add
+      setTasks((prev) => prev.filter((t) => t.id !== tempId));
+    }
   };
 
+  // Optimistic Update Task (0ms latency check-in)
   const updateTask = async (taskId: string, updates: Partial<Task>) => {
     if (!user) return;
-    await updateTaskInDb(user.uid, taskId, updates);
-    await loadTasks();
-    // Also refresh history for this task in case it affects completion state
-    await refreshHistories([taskId]);
+
+    // 1. Snapshot previous state for rollback
+    const previousTasks = [...tasks];
+
+    // 2. Optimistic UI update
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)),
+    );
+
+    // 3. Persist to Firestore
+    try {
+      await updateTaskInDb(user.uid, taskId, updates);
+    } catch (err) {
+      console.error("Failed to update task, rolling back:", err);
+      setTasks(previousTasks);
+    }
   };
 
+  // Optimistic Delete Task
   const deleteTask = async (taskId: string) => {
     if (!user) return;
-    await deleteTaskFromDb(user.uid, taskId);
+
+    const previousTasks = [...tasks];
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
     setHistories((prev) => {
       const copy = { ...prev };
       delete copy[taskId];
       return copy;
     });
-    await loadTasks();
+
+    try {
+      await deleteTaskFromDb(user.uid, taskId);
+    } catch (err) {
+      console.error("Failed to delete task, rolling back:", err);
+      setTasks(previousTasks);
+    }
   };
 
-  // Calculate remaining tasks for today
+  // Efficient remaining task calculation:
+  // Checks lastUpdate (fastest) with history fallback
   const remainingTasksCount = tasks.filter((task) => {
+    const today = getTodayString();
+    if (task.lastUpdate) {
+      const lastCheckDay = normalizeToLocalDateString(task.lastUpdate);
+      if (lastCheckDay === today) return false;
+    }
+
     const history = histories[task.id] || [];
-    const today = new Date().toDateString();
-    return !history.some((h) => new Date(h.date).toDateString() === today);
+    return !history.some((h) => normalizeToLocalDateString(h.date) === today);
   }).length;
 
   return (

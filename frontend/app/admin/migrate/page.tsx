@@ -6,24 +6,38 @@ import {
   getDocs,
   doc,
   updateDoc,
-  query,
-  getDoc,
-  writeBatch,
-  where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Loader } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function MigratePage() {
+  const { user, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
-  const [progress, setProgress] = useState("");
+
+  const adminEmails = (
+    process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
+    "satyamok03@gmail.com"
+  )
+    .split(",")
+    .map((e) => e.trim().toLowerCase());
+
+  const isAdmin =
+    user &&
+    (profile?.role === "admin" ||
+      (user.email && adminEmails.includes(user.email.toLowerCase())));
 
   const log = (msg: string) => setLogs((prev) => [...prev, msg]);
 
   const runMigration = async () => {
+    if (!isAdmin) {
+      toast.error("Unauthorized: Admin privileges required.");
+      return;
+    }
+
     setLoading(true);
     setLogs([]);
     try {
@@ -111,6 +125,11 @@ export default function MigratePage() {
   };
 
   const executeUsernameBackfill = async () => {
+    if (!isAdmin) {
+      toast.error("Unauthorized: Admin privileges required.");
+      return;
+    }
+
     setLoading(true);
     setLogs([]);
     log("Starting username backfill...");
@@ -155,8 +174,8 @@ export default function MigratePage() {
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Migration Admin</h1>
-      <Button onClick={runMigration} disabled={loading}>
-        {loading && <Loader className="w-4 h-4 mr-2 animate-spin" />}
+      <Button onClick={runMigration} disabled={loading || !isAdmin}>
+        {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         Run Base64 to Cloudinary Migration
       </Button>
 
@@ -164,10 +183,10 @@ export default function MigratePage() {
 
       <Button
         onClick={executeUsernameBackfill}
-        disabled={loading}
+        disabled={loading || !isAdmin}
         variant="secondary"
       >
-        {loading && <Loader className="w-4 h-4 mr-2 animate-spin" />}
+        {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         Run Username Backfill
       </Button>
 

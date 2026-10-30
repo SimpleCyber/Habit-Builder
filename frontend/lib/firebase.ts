@@ -4,7 +4,12 @@ import {
   setPersistence,
   browserLocalPersistence,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -19,7 +24,28 @@ const firebaseConfig = {
 // Initialize Firebase (singleton pattern)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
-setPersistence(auth, browserLocalPersistence); // Ensure local persistence (30+ days)
-const db = getFirestore(app);
+
+if (typeof window !== "undefined") {
+  setPersistence(auth, browserLocalPersistence).catch((err) =>
+    console.warn("Auth persistence error:", err),
+  );
+}
+
+// Enable offline persistent IndexedDB cache for instant 0ms loads
+let db: any;
+try {
+  if (typeof window !== "undefined") {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } else {
+    db = getFirestore(app);
+  }
+} catch {
+  // If already initialized in hot reload or unsupported SSR
+  db = getFirestore(app);
+}
 
 export { app, auth, db };

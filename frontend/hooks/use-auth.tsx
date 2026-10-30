@@ -31,31 +31,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
+    // 1. Instant hydration from cached profile
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("habitx_cached_profile");
+        if (cached) {
+          setProfile(JSON.parse(cached));
+        }
+      } catch {}
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
+        // Unblock UI loading immediately
+        setLoading(false);
+
+        // Fetch profile concurrently in background
         try {
           const { getUserProfile } = await import("@/lib/firebase-db");
           const p = await getUserProfile(firebaseUser.uid);
-          setProfile(p);
+          if (p) {
+            setProfile(p);
+            try {
+              localStorage.setItem("habitx_cached_profile", JSON.stringify(p));
+            } catch {}
+          }
         } catch (e) {
           console.error("Failed to fetch profile in AuthProvider", e);
         }
       } else {
         setUser(null);
         setProfile(null);
+        setLoading(false);
+        try {
+          localStorage.removeItem("habitx_cached_profile");
+        } catch {}
       }
-      setLoading(false);
     });
 
     return unsubscribe;
   }, []);
 
-  // Force Onboarding Flow
+  // Force Onboarding Flow only when user has logged in and explicitly has no username
   useEffect(() => {
     if (!loading && user && profile !== null) {
-      // If profile loaded but no username
-      if (!profile.username && pathname !== "/onboarding") {
+      if (
+        !profile.username &&
+        pathname !== "/onboarding" &&
+        pathname !== "/" &&
+        !pathname.startsWith("/auth")
+      ) {
         router.push("/onboarding");
       }
     }

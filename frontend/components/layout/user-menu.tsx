@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { getAuth, onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { getAuth, signOut } from "firebase/auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,13 +12,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import {
-  UserPlus,
-  UserRoundCheck,
-  UserRoundSearch,
   UserSquare,
   UserCircle,
 } from "lucide-react";
-import { getUserData } from "@/lib/firebase-db";
+import { useAuth } from "@/hooks/use-auth";
 
 function toggleTheme() {
   if (typeof document === "undefined") return;
@@ -30,21 +27,8 @@ function toggleTheme() {
 }
 
 export function UserMenu() {
-  const [user, setUser] = React.useState<User | null>(null);
-  const [username, setUsername] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    const auth = getAuth();
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      if (u) {
-        getUserData(u.uid).then((data) => {
-          if (data?.username) setUsername(data.username);
-        });
-      }
-    });
-    return () => unsub();
-  }, []);
+  const { user, profile } = useAuth();
+  const username = profile?.username;
 
   React.useEffect(() => {
     if (typeof document === "undefined") return;

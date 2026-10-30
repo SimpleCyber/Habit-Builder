@@ -37,7 +37,7 @@ interface TasksContextType {
 const TasksContext = createContext<TasksContextType>({
   tasks: [],
   histories: {},
-  loading: true,
+  loading: false,
   histLoading: false,
   addTask: async () => undefined,
   updateTask: async () => {},
@@ -52,32 +52,54 @@ export const TasksProvider = ({ children }: { children: ReactNode }) => {
   const [histories, setHistories] = useState<
     Record<string, TaskHistoryEntry[]>
   >({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [histLoading, setHistLoading] = useState(false);
 
+  // 1. Instant local hydration from localStorage
+  useEffect(() => {
+    if (!user) {
+      setTasks([]);
+      setHistories({});
+      return;
+    }
+
+    try {
+      const cached = localStorage.getItem(`habitx_tasks_${user.uid}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setTasks(parsed);
+        }
+      }
+    } catch {}
+  }, [user]);
+
+  // 2. Background sync with Firestore
   const loadTasks = useCallback(async () => {
     if (!user) return;
-    setLoading(true);
     try {
       const data = await getTasksFromDb(user.uid);
-      setTasks(data || []);
+      if (data) {
+        setTasks(data);
+        try {
+          localStorage.setItem(
+            `habitx_tasks_${user.uid}`,
+            JSON.stringify(data),
+          );
+        } catch {}
+      }
     } catch (err) {
       console.error("Failed to load tasks:", err);
-    } finally {
-      setLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
     if (user) {
       loadTasks();
-    } else {
-      setTasks([]);
-      setHistories({});
-      setLoading(false);
     }
   }, [user, loadTasks]);
 
+  // Load history on-demand when needed
   const refreshHistories = useCallback(
     async (taskIds?: string[]) => {
       if (!user) return;
@@ -108,19 +130,6 @@ export const TasksProvider = ({ children }: { children: ReactNode }) => {
     [user, tasks],
   );
 
-  // Lazy-load history only for tasks that haven't been loaded yet
-  useEffect(() => {
-    if (!user || tasks.length === 0) return;
-
-    const missing = tasks
-      .map((t) => t.id)
-      .filter((id) => histories[id] === undefined);
-
-    if (missing.length > 0) {
-      refreshHistories(missing);
-    }
-  }, [user, tasks, histories, refreshHistories]);
-
   // Optimistic Add Task
   const addTask = async (
     taskData: Omit<Task, "id" | "createdAt" | "streak" | "lastUpdate">,
@@ -136,37 +145,58 @@ export const TasksProvider = ({ children }: { children: ReactNode }) => {
       createdAt: new Date().toISOString(),
     };
 
-    // Optimistically update list
-    setTasks((prev) => [...prev, newTask]);
+    setTasks((prev) => {
+      const updated = [...prev, newTask];
+      try {
+        localStorage.setItem(
+          `habitx_tasks_${user.uid}`,
+          JSON.stringify(updated),
+        );
+      } catch {}
+      return updated;
+    });
 
     try {
       const realId = await createTaskInDb(user.uid, taskData);
       if (realId) {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === tempId ? { ...t, id: realId } : t)),
-        );
+        setTasks((prev) => {
+          const updated = prev.map((t) =>
+            t.id === tempId ? { ...t, id: realId } : t,
+          );
+          try {
+            localStorage.setItem(
+              `habitx_tasks_${user.uid}`,
+              JSON.stringify(updated),
+            );
+          } catch {}
+          return updated;
+        });
       }
       return realId;
     } catch (err) {
       console.error("Failed to add task:", err);
-      // Revert optimistic add
       setTasks((prev) => prev.filter((t) => t.id !== tempId));
     }
   };
 
-  // Optimistic Update Task (0ms latency check-in)
+  // Optimistic Update Task (0ms response)
   const updateTask = async (taskId: string, updates: Partial<Task>) => {
     if (!user) return;
 
-    // 1. Snapshot previous state for rollback
     const previousTasks = [...tasks];
+    setTasks((prev) => {
+      const updated = prev.map((t) =>
+        t.id === taskId ? { ...t, ...updates } : t,
+      );
+      try {
+        localStorage.setItem(
+          `habitx_tasks_${user.uid}`,
+          JSON.stringify(updated),
+        );
+      } catch {}
+      return updated;
+    });
 
-    // 2. Optimistic UI update
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)),
-    );
-
-    // 3. Persist to Firestore
     try {
       await updateTaskInDb(user.uid, taskId, updates);
     } catch (err) {
@@ -180,11 +210,15 @@ export const TasksProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
 
     const previousTasks = [...tasks];
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
-    setHistories((prev) => {
-      const copy = { ...prev };
-      delete copy[taskId];
-      return copy;
+    setTasks((prev) => {
+      const updated = prev.filter((t) => t.id !== taskId);
+      try {
+        localStorage.setItem(
+          `habitx_tasks_${user.uid}`,
+          JSON.stringify(updated),
+        );
+      } catch {}
+      return updated;
     });
 
     try {
@@ -195,15 +229,12 @@ export const TasksProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Efficient remaining task calculation:
-  // Checks lastUpdate (fastest) with history fallback
   const remainingTasksCount = tasks.filter((task) => {
     const today = getTodayString();
     if (task.lastUpdate) {
       const lastCheckDay = normalizeToLocalDateString(task.lastUpdate);
       if (lastCheckDay === today) return false;
     }
-
     const history = histories[task.id] || [];
     return !history.some((h) => normalizeToLocalDateString(h.date) === today);
   }).length;

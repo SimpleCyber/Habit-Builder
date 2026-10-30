@@ -131,8 +131,12 @@ export default function HomePage() {
     [tasks, currentTaskId],
   );
 
-  // Loading state
-  if (authLoading || tasksLoading || (currentTaskId && histLoading)) {
+  // Non-blocking Loading state: Only block screen if zero cached data exists
+  const isInitialTasksLoading = tasksLoading && tasks.length === 0;
+  const isCurrentTaskHistoryLoading =
+    Boolean(currentTaskId && histLoading && !histories[currentTaskId]);
+
+  if ((authLoading && !user) || isInitialTasksLoading || isCurrentTaskHistoryLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

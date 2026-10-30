@@ -3,28 +3,36 @@
 import { Flame } from "lucide-react";
 import type { Task, TaskHistoryEntry } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
+import {
+  getTodayString,
+  getYesterdayString,
+  normalizeToLocalDateString,
+} from "@/lib/date-utils";
 
 interface TaskCardProps {
   task: Task;
-  history: TaskHistoryEntry[];
+  history?: TaskHistoryEntry[];
   onClick?: () => void;
   readOnly?: boolean;
 }
 
-export function TaskCard({ task, history, onClick, readOnly }: TaskCardProps) {
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
+export function TaskCard({ task, history = [], onClick, readOnly }: TaskCardProps) {
+  const todayStr = getTodayString();
+  const yesterdayStr = getYesterdayString();
+  const lastUpdateStr = task.lastUpdate ? normalizeToLocalDateString(task.lastUpdate) : "";
 
-  const isSameDay = (d1: Date, d2: Date) =>
-    d1.toDateString() === d2.toDateString();
+  // O(1) resolution from cached task document, fallback to history array if loaded
+  const checkedToday =
+    lastUpdateStr === todayStr ||
+    (history.length > 0 &&
+      history.some((h) => normalizeToLocalDateString(h.date) === todayStr));
 
-  const checkedToday = history.some((h) => isSameDay(new Date(h.date), today));
-  const checkedYesterday = history.some((h) =>
-    isSameDay(new Date(h.date), yesterday),
-  );
+  const checkedYesterday =
+    lastUpdateStr === yesterdayStr ||
+    (history.length > 0 &&
+      history.some((h) => normalizeToLocalDateString(h.date) === yesterdayStr));
 
-  const displayStreak = checkedToday || checkedYesterday ? task.streak : 0;
+  const displayStreak = checkedToday || checkedYesterday ? (task.streak || 0) : 0;
 
   return (
     <div

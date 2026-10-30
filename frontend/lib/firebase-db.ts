@@ -125,42 +125,63 @@ export async function disconnectFromFlejet(uid: string) {
   await setDoc(doc(db, "users", uid), { flejetConfig: null }, { merge: true });
 }
 
+let cachedSuggestedUsers: { data: any[]; timestamp: number } | null = null;
+const SUGGESTED_CACHE_TTL = 3 * 60 * 1000; // 3 minutes
+
 export async function getSuggestedUsers(limitCount = 3) {
-  // 1. Get top active users (by streak) - fetch a larger pool to shuffle
-  const activeQ = query(
-    collection(db, "users"),
-    orderBy("streak", "desc"),
-    limit(10),
-  );
+  const now = Date.now();
+  if (
+    cachedSuggestedUsers &&
+    now - cachedSuggestedUsers.timestamp < SUGGESTED_CACHE_TTL
+  ) {
+    const shuffled = [...cachedSuggestedUsers.data].sort(
+      () => 0.5 - Math.random(),
+    );
+    return shuffled.slice(0, limitCount);
+  }
 
-  // 2. Also get some other users (e.g., recently created) to mix in
-  const recentQ = query(
-    collection(db, "users"),
-    orderBy("createdAt", "desc"),
-    limit(10),
-  );
+  try {
+    // 1. Get top active users (by streak) - fetch a larger pool to shuffle
+    const activeQ = query(
+      collection(db, "users"),
+      orderBy("streak", "desc"),
+      limit(10),
+    );
 
-  const [activeSnap, recentSnap] = await Promise.all([
-    getDocs(activeQ),
-    getDocs(recentQ),
-  ]);
+    // 2. Also get some other users (e.g., recently created) to mix in
+    const recentQ = query(
+      collection(db, "users"),
+      orderBy("createdAt", "desc"),
+      limit(10),
+    );
 
-  const userMap = new Map();
+    const [activeSnap, recentSnap] = await Promise.all([
+      getDocs(activeQ),
+      getDocs(recentQ),
+    ]);
 
-  activeSnap.forEach((d) => userMap.set(d.id, { uid: d.id, ...d.data() }));
-  recentSnap.forEach((d) => userMap.set(d.id, { uid: d.id, ...d.data() }));
+    const userMap = new Map();
 
-  const combined = Array.from(userMap.values());
+    activeSnap.forEach((d) => userMap.set(d.id, { uid: d.id, ...d.data() }));
+    recentSnap.forEach((d) => userMap.set(d.id, { uid: d.id, ...d.data() }));
 
-  // Filter out incomplete profiles (missing name, username, or photoURL)
-  const completeProfiles = combined.filter(
-    (u: any) => u.name && u.username && u.photoURL,
-  );
+    const combined = Array.from(userMap.values());
 
-  // Shuffle implementation to provide "random" feel within the active/recent pool
-  const shuffled = completeProfiles.sort(() => 0.5 - Math.random());
+    // Filter out incomplete profiles (missing name, username, or photoURL)
+    const completeProfiles = combined.filter(
+      (u: any) => u.name && u.username && u.photoURL,
+    );
 
-  return shuffled.slice(0, limitCount);
+    cachedSuggestedUsers = { data: completeProfiles, timestamp: now };
+
+    // Shuffle implementation to provide "random" feel within the active/recent pool
+    const shuffled = completeProfiles.sort(() => 0.5 - Math.random());
+
+    return shuffled.slice(0, limitCount);
+  } catch (error) {
+    console.warn("Could not fetch suggested users:", error);
+    return cachedSuggestedUsers ? cachedSuggestedUsers.data.slice(0, limitCount) : [];
+  }
 }
 
 /* =========================================================
